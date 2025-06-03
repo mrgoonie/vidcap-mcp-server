@@ -12,21 +12,22 @@ import { randomUUID } from 'crypto';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 
 // Import tools and resources
-import screenshotOneTools from './tools/screenshotone.tool.js';
 import { InMemoryEventStore } from '@modelcontextprotocol/sdk/examples/shared/inMemoryEventStore.js';
+import youtubeTool from './tools/youtube.tool.js';
+import * as YoutubeController from './controllers/youtube.controller.js';
 
 /**
- * ScreenshotOne MCP Server
+ * VidCap YouTube API MCP Server
  *
- * A project for building MCP servers that follow best practices.
- * Demonstrates proper structure, logging, error handling, and MCP protocol integration.
+ * A TypeScript Model Context Protocol (MCP) server for the VidCap YouTube API.
+ * Includes CLI support and an extensible structure for connecting AI systems (LLMs) to the VidCap YouTube API.
  */
 
 // Create file-level logger
 const indexLogger = Logger.forContext('index.ts');
 
 // Log initialization at debug level
-indexLogger.debug('ScreenshotOne MCP server module loaded');
+indexLogger.debug(`${PACKAGE_NAME} MCP server module loaded`);
 
 let serverInstance: McpServer | null = null;
 let expressApp: express.Application | null = null;
@@ -61,7 +62,7 @@ export async function startServer(mode: 'stdio' | 'http' = 'stdio') {
 	);
 	serverLogger.debug(`Config DEBUG value: ${config.get('DEBUG')}`);
 
-	serverLogger.info(`Initializing ScreenshotOne MCP server v${VERSION}`);
+	serverLogger.info(`Initializing ${PACKAGE_NAME} v${VERSION}`);
 	serverInstance = new McpServer({
 		name: PACKAGE_NAME,
 		version: VERSION,
@@ -69,8 +70,7 @@ export async function startServer(mode: 'stdio' | 'http' = 'stdio') {
 
 	// Register tools and resources
 	serverLogger.info('Registering tools and resources...');
-	screenshotOneTools.register(serverInstance);
-	serverLogger.debug('Registered ScreenshotOne tools');
+	youtubeTool.register(serverInstance!);
 	serverLogger.info('All tools and resources registered successfully');
 
 	if (mode === 'stdio') {
@@ -105,6 +105,20 @@ export async function startServer(mode: 'stdio' | 'http' = 'stdio') {
 		// Create Express app
 		expressApp = express();
 		expressApp.use(express.json());
+
+		// YouTube API Routes
+		expressApp.get('/api/v1/youtube/info', YoutubeController.getInfo);
+		expressApp.get('/api/v1/youtube/media', YoutubeController.getMedia);
+		expressApp.get('/api/v1/youtube/caption', YoutubeController.getCaption);
+		expressApp.get('/api/v1/youtube/summary', YoutubeController.getSummary);
+		expressApp.get(
+			'/api/v1/youtube/screenshot',
+			YoutubeController.getScreenshot,
+		);
+		expressApp.get(
+			'/api/v1/youtube/screenshot-multiple',
+			YoutubeController.getScreenshotMultiple,
+		);
 
 		// Set up MCP endpoint
 		expressApp.post(path, async (req, res) => {

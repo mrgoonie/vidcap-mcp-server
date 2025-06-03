@@ -1,14 +1,14 @@
 {
-	"name": "screenshotone-mcp-server",
+	"name": "vidcap-youtube-api-mcp-server",
 	"version": "1.0.0",
-	"description": "TypeScript Model Context Protocol (MCP) server for ScreenshotOne. Includes CLI support and extensible structure for connecting AI systems (LLMs) to ScreenshotOne API",
+	"description": "TypeScript Model Context Protocol (MCP) server for VidCap YouTube API. Includes CLI support and extensible structure for connecting AI systems (LLMs) to VidCap YouTube API",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"_moduleNotes": "Although source code uses ESM syntax, the build output target is CommonJS to align with Node.js compatibility and patterns seen in related MCP servers. tsconfig.json's 'module': 'NodeNext' handles the input syntax, while tsc outputs CJS.",
 	"type": "commonjs",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/mrgoonie/screenshotone-mcp-server.git"
+		"url": "https://github.com/mrgoonie/vidcap-youtube-api-mcp-server.git"
 	},
 	"bin": {
 		"mcp-server": "./dist/index.js"
@@ -69,7 +69,7 @@
 		"@types/humanize-duration": "^3.27.4",
 		"@types/jest": "^29.5.14",
 		"@types/lodash": "^4.17.16",
-		"@types/node": "^22.15.3",
+		"@types/node": "^22.15.29",
 		"@typescript-eslint/eslint-plugin": "^8.31.1",
 		"@typescript-eslint/parser": "^8.31.1",
 		"eslint": "^9.25.1",
@@ -95,6 +95,7 @@
 		"@aws-sdk/client-s3": "^3.803.0",
 		"@aws-sdk/node-http-handler": "^3.374.0",
 		"@modelcontextprotocol/sdk": "^1.11.0",
+		"@types/he": "^1.2.3",
 		"axios": "^1.9.0",
 		"bcrypt": "^5.1.1",
 		"commander": "^13.1.0",
@@ -104,6 +105,7 @@
 		"diginext-utils": "^3.13.8",
 		"dotenv": "^16.5.0",
 		"express": "^5.1.0",
+		"he": "^1.2.0",
 		"humanize-duration": "^3.32.1",
 		"jimp": "^1.6.0",
 		"lodash": "^4.17.21",
