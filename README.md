@@ -65,9 +65,26 @@ Example of running the server (which exposes the API):
 npm run dev:server:http
 ```
 
-Example of running the CLI:
+Examples of running the CLI commands:
+
 ```bash
-npm run dev:cli -- youtube getCaption --url "<your_youtube_url>"
+# Get YouTube video information
+npm run dev:cli -- youtube getInfo --url "<your_youtube_url>" --cache true
+
+# Get available media formats for a YouTube video
+npm run dev:cli -- youtube getMedia --url "<your_youtube_url>"
+
+# Get video captions/transcript
+npm run dev:cli -- youtube getCaption --url "<your_youtube_url>" --locale "en" --model "<optional_model>"
+
+# Get AI-generated summary of video content
+npm run dev:cli -- youtube getSummary --url "<your_youtube_url>" --locale "en" --model "<optional_model>" --screenshot "0" --cache true
+
+# Get screenshot from video at specific timestamp
+npm run dev:cli -- youtube getScreenshot --url "<your_youtube_url>" --second "30"
+
+# Get multiple screenshots from video at different timestamps
+npm run dev:cli -- youtube getScreenshotMultiple --url "<your_youtube_url>" --seconds 10 30 60
 ```
 
 ### MCP Setup
