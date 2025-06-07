@@ -1,5 +1,5 @@
 {
-	"name": "vidcap-youtube-api-mcp-server",
+	"name": "vidcap-mcp-server",
 	"version": "1.0.0",
 	"description": "TypeScript Model Context Protocol (MCP) server for VidCap YouTube API. Includes CLI support and extensible structure for connecting AI systems (LLMs) to VidCap YouTube API",
 	"main": "dist/index.js",
@@ -8,7 +8,7 @@
 	"type": "commonjs",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/mrgoonie/vidcap-youtube-api-mcp-server.git"
+		"url": "https://github.com/mrgoonie/vidcap-mcp-server.git"
 	},
 	"bin": {
 		"mcp-server": "./dist/index.js"
