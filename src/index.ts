@@ -14,7 +14,7 @@ import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 // Import tools and resources
 import { InMemoryEventStore } from '@modelcontextprotocol/sdk/examples/shared/inMemoryEventStore.js';
 import youtubeTool from './tools/youtube.tool.js';
-import * as YoutubeController from './controllers/youtube.controller.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 
 /**
  * VidCap YouTube API MCP Server
@@ -34,7 +34,10 @@ let expressApp: express.Application | null = null;
 let expressServer: ReturnType<express.Application['listen']> | null = null;
 
 // Map to store transports by session ID for HTTP transport mode
-const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
+const transports: {
+	streamable: Record<string, StreamableHTTPServerTransport>;
+	sse: Record<string, SSEServerTransport>;
+} = { streamable: {}, sse: {} };
 
 /**
  * Start the MCP server with the specified transport mode
@@ -106,21 +109,96 @@ export async function startServer(mode: 'stdio' | 'http' = 'stdio') {
 		expressApp = express();
 		expressApp.use(express.json());
 
-		// YouTube API Routes
-		expressApp.get('/api/v1/youtube/info', YoutubeController.getInfo);
-		expressApp.get('/api/v1/youtube/media', YoutubeController.getMedia);
-		expressApp.get('/api/v1/youtube/caption', YoutubeController.getCaption);
-		expressApp.get('/api/v1/youtube/summary', YoutubeController.getSummary);
-		expressApp.get(
-			'/api/v1/youtube/screenshot',
-			YoutubeController.getScreenshot,
-		);
-		expressApp.get(
-			'/api/v1/youtube/screenshot-multiple',
-			YoutubeController.getScreenshotMultiple,
-		);
+		// Legacy SSE endpoint for older clients
+		expressApp.get('/sse', async (_req, res) => {
+			serverLogger.info(
+				'[Express] Received GET request to /sse for legacy SSE transport',
+			);
+			try {
+				const transport = new SSEServerTransport('/messages', res);
+				transports.sse[transport.sessionId] = transport;
+				serverLogger.info(
+					`[Express] SSE transport created with session ID: ${transport.sessionId}`,
+				);
 
-		// Set up MCP endpoint
+				res.on('close', () => {
+					serverLogger.info(
+						`[Express] SSE client disconnected for session ${transport.sessionId}, removing transport.`,
+					);
+					delete transports.sse[transport.sessionId];
+				});
+
+				if (serverInstance) {
+					await serverInstance.connect(transport);
+					serverLogger.info(
+						`[Express] Connected SSE transport ${transport.sessionId} to MCP server`,
+					);
+				} else {
+					serverLogger.error(
+						'[Express] Cannot connect SSE transport - serverInstance is null',
+					);
+					if (!res.headersSent) {
+						res.status(500).end();
+					}
+				}
+			} catch (error) {
+				serverLogger.error(
+					'[Express] Error setting up SSE transport:',
+					error,
+				);
+				if (!res.headersSent) {
+					res.status(500).end();
+				}
+			}
+		});
+
+		// Legacy message endpoint for older clients
+		expressApp.post('/messages', async (req, res) => {
+			const sessionId = req.query.sessionId as string;
+			serverLogger.info(
+				`[Express] Received POST request to /messages for SSE session ${sessionId}`,
+			);
+			const transport = transports.sse[sessionId];
+			if (transport) {
+				try {
+					await transport.handlePostMessage(req, res, req.body);
+					serverLogger.debug(
+						`[Express] Handled POST message for SSE session ${sessionId}`,
+					);
+				} catch (error) {
+					serverLogger.error(
+						`[Express] Error handling POST message for SSE session ${sessionId}:`,
+						error,
+					);
+					if (!res.headersSent) {
+						const requestId = (req.body as any)?.id ?? null;
+						res.status(500).json({
+							jsonrpc: '2.0',
+							error: {
+								code: -32000,
+								message: 'Error processing SSE message',
+							},
+							id: requestId,
+						});
+					}
+				}
+			} else {
+				serverLogger.warn(
+					`[Express] No SSE transport found for session ID: ${sessionId} on /messages POST`,
+				);
+				const requestId = (req.body as any)?.id ?? null;
+				res.status(400).json({
+					jsonrpc: '2.0',
+					error: {
+						code: -32001,
+						message: 'No transport found for sessionId',
+					},
+					id: requestId,
+				});
+			}
+		});
+
+		// Set up MCP endpoint (HTTP Streamable)
 		expressApp.post(path, async (req, res) => {
 			serverLogger.info(`[Express] Received POST request to ${path}`);
 			try {
@@ -130,12 +208,12 @@ export async function startServer(mode: 'stdio' | 'http' = 'stdio') {
 					| undefined;
 				let transport: StreamableHTTPServerTransport;
 
-				if (sessionId && transports[sessionId]) {
+				if (sessionId && transports.streamable[sessionId]) {
 					// Reuse existing transport
 					serverLogger.info(
 						`[Express] Reusing existing transport for session ${sessionId}`,
 					);
-					transport = transports[sessionId];
+					transport = transports.streamable[sessionId];
 				} else {
 					// Either no session ID or invalid session ID provided
 					// Create a new transport with a new session ID
@@ -166,7 +244,7 @@ export async function startServer(mode: 'stdio' | 'http' = 'stdio') {
 							serverLogger.info(
 								`[Express] Session initialized with ID: ${sessionId}`,
 							);
-							transports[sessionId] = transport;
+							transports.streamable[sessionId] = transport;
 
 							// Set the session ID in the response headers
 							res.setHeader('mcp-session-id', sessionId);
@@ -176,11 +254,11 @@ export async function startServer(mode: 'stdio' | 'http' = 'stdio') {
 					// Set up onclose handler to clean up transport when closed
 					transport.onclose = () => {
 						const sid = transport.sessionId;
-						if (sid && transports[sid]) {
+						if (sid && transports.streamable[sid]) {
 							serverLogger.info(
 								`[Express] Transport closed for session ${sid}, removing from transports map`,
 							);
-							delete transports[sid];
+							delete transports.streamable[sid];
 						}
 					};
 
@@ -249,7 +327,7 @@ export async function startServer(mode: 'stdio' | 'http' = 'stdio') {
 			const sessionId = req.headers['mcp-session-id'] as
 				| string
 				| undefined;
-			if (!sessionId || !transports[sessionId]) {
+			if (!sessionId || !transports.streamable[sessionId]) {
 				serverLogger.warn(
 					`[Express] Invalid or missing session ID for GET request: ${sessionId}`,
 				);
@@ -271,7 +349,7 @@ export async function startServer(mode: 'stdio' | 'http' = 'stdio') {
 				);
 			}
 
-			const transport = transports[sessionId];
+			const transport = transports.streamable[sessionId];
 			await transport.handleRequest(req, res);
 		});
 
@@ -280,7 +358,7 @@ export async function startServer(mode: 'stdio' | 'http' = 'stdio') {
 			const sessionId = req.headers['mcp-session-id'] as
 				| string
 				| undefined;
-			if (!sessionId || !transports[sessionId]) {
+			if (!sessionId || !transports.streamable[sessionId]) {
 				serverLogger.warn(
 					`[Express] Invalid or missing session ID for DELETE request: ${sessionId}`,
 				);
@@ -293,7 +371,7 @@ export async function startServer(mode: 'stdio' | 'http' = 'stdio') {
 			);
 
 			try {
-				const transport = transports[sessionId];
+				const transport = transports.streamable[sessionId];
 				await transport.handleRequest(req, res);
 			} catch (error) {
 				serverLogger.error(
@@ -389,14 +467,32 @@ async function main() {
 		mainLogger.info('Received SIGINT signal. Shutting down server...');
 
 		// Close all active transports to properly clean up resources
-		for (const sessionId in transports) {
+		for (const sessionId in transports.streamable) {
 			try {
-				mainLogger.info(`Closing transport for session ${sessionId}`);
-				await transports[sessionId].close();
-				delete transports[sessionId];
+				mainLogger.info(
+					`Closing streamable transport for session ${sessionId}`,
+				);
+				await transports.streamable[sessionId].close();
+				delete transports.streamable[sessionId];
 			} catch (error) {
 				mainLogger.error(
-					`Error closing transport for session ${sessionId}:`,
+					`Error closing streamable transport for session ${sessionId}:`,
+					error,
+				);
+			}
+		}
+		for (const sessionId in transports.sse) {
+			try {
+				mainLogger.info(
+					`Closing SSE transport for session ${sessionId}`,
+				);
+				// SSEServerTransport might not have an explicit async close(), ensure proper cleanup
+				// For now, we assume it's handled by client disconnect or a similar mechanism.
+				// If SSEServerTransport had a close method, it would be: await transports.sse[sessionId].close();
+				delete transports.sse[sessionId];
+			} catch (error) {
+				mainLogger.error(
+					`Error closing SSE transport for session ${sessionId}:`,
 					error,
 				);
 			}

@@ -90,7 +90,10 @@ export const YoutubeCaptionSegmentSchema = z.object({
 
 // Represents the 'data' field for caption results in the MCP tool's response.
 // This will be an array of caption segments, aligning with VidCap API for /youtube/caption.
-export const YoutubeCaptionDataSchema = z.array(YoutubeCaptionSegmentSchema);
+export const YoutubeCaptionDataSchema = z.union([
+	z.array(YoutubeCaptionSegmentSchema),
+	z.string(),
+]);
 
 // Schema for the 'data' object within the API's caption response
 export const YoutubeApiCaptionDataObjectSchema = z.object({
