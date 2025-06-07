@@ -55,27 +55,23 @@ export function getIpApiCredentials(): IpApiCredentials {
 }
 
 /**
- * Retrieves ScreenshotOne credentials from configuration.
- * Specifically checks for SCREENSHOTONE_ACCESS_KEY.
+ * Retrieves VidCap credentials from configuration.
+ * Specifically checks for VIDCAP_API_KEY.
  * @returns IpApiCredentials object containing the API token if found.
  */
-export function getScreenshotOneCredentials(): IpApiCredentials {
+export function getVidCapCredentials(): IpApiCredentials {
 	const methodLogger = Logger.forContext(
 		'utils/transport.util.ts',
-		'getScreenshotOneCredentials',
+		'getVidCapCredentials',
 	);
 
-	const apiToken = config.get('SCREENSHOTONE_ACCESS_KEY');
+	const apiToken = config.get('VIDCAP_API_KEY');
 
 	if (!apiToken) {
-		methodLogger.debug(
-			'No ScreenshotOne access key found (SCREENSHOTONE_ACCESS_KEY).',
-		);
+		methodLogger.debug('No VidCap access key found (VIDCAP_API_KEY).');
 		return {}; // Return empty object if no token
 	} else {
-		methodLogger.debug(
-			'Using ScreenshotOne access key from configuration.',
-		);
+		methodLogger.debug('Using VidCap access key from configuration.');
 		return { apiToken };
 	}
 }

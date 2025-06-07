@@ -1,27 +1,50 @@
-# ScreenshotOne.com - MCP Server
+# VidCap YouTube API - MCP Server
 
-This project provides a Model Context Protocol (MCP) server that connects AI assistants to [ScreenshotOne.com](https://screenshotone.com) API to capture screenshots of websites. 
+This project provides a Model Context Protocol (MCP) server that acts as a proxy to the VidCap YouTube API, allowing AI assistants to easily access YouTube video data and functionalities. It also serves as a boilerplate for building custom MCP servers.
 
-- [Github](https://github.com/mrgoonie/screenshotone-mcp-server)
-- [NPM](https://www.npmjs.com/package/screenshotone-mcp-server)
+- [Github](https://github.com/mrgoonie/vidcap-mcp-server) 
+- [NPM](https://www.npmjs.com/package/vidcap-mcp-server) 
 
-### Available Features
-- [x] Take screenshots of any URL
-- [x] Render HTML content and take screenshots
-- [x] Customize viewport size and device emulation
-- [x] Capture full-page screenshots
-- [x] Select specific elements using CSS selectors
-- [x] Multiple output formats (PNG, JPEG, WebP, PDF)
-- [x] Block ads, trackers, and cookie banners
-- [x] Inject custom CSS and JavaScript
-- [x] Control wait behavior and timing
+## VidCap YouTube API
 
-## ScreenshotOne.com
+This server also proxies requests to the VidCap YouTube API, providing convenient access to YouTube video data and functionalities. You will need a `VIDCAP_API_KEY` set in your environment variables.
 
-- [Website](https://screenshotone.com)
-- [Playground](https://screenshotone.com/playground)
-- [API Docs](https://screenshotone.com/docs/getting-started/)
-- Create your API key [here](https://dash.screenshotone.com/access)
+Endpoints are available under the `/api/v1/youtube/` path:
+
+- **GET `/info`**
+  - Description: Get and save YouTube video information.
+  - Query Parameters:
+    - `url` (string, required): YouTube video URL.
+    - `cache` (boolean, optional, default: true): Whether to cache video info.
+- **GET `/media`**
+  - Description: Get available media formats for a YouTube video.
+  - Query Parameters:
+    - `url` (string, required): YouTube video URL.
+- **GET `/caption`**
+  - Description: Get video captions/transcript.
+  - Query Parameters:
+    - `url` (string, required): YouTube video URL.
+    - `locale` (string, optional, default: 'en'): Language code for captions.
+    - `model` (string, optional): AI model for processing.
+    - `ext` (enum, optional): File extension for captions (json3, srv1, srv2, srv3, ttml, vtt).
+- **GET `/summary`**
+  - Description: Get AI-generated summary of video content.
+  - Query Parameters:
+    - `url` (string, required): YouTube video URL.
+    - `locale` (string, optional, default: 'en'): Target language code for summary.
+    - `model` (string, optional): AI model for summarization.
+    - `screenshot` (string, optional, default: '0'): '1' to enable auto-screenshots for summary parts.
+    - `cache` (boolean, optional): Whether to use cached results.
+- **GET `/screenshot`**
+  - Description: Get screenshot from video at specific timestamp.
+  - Query Parameters:
+    - `url` (string, required): YouTube video URL.
+    - `second` (string, optional, default: '0'): Timestamp in seconds or YouTube time format.
+- **GET `/screenshot-multiple`**
+  - Description: Get multiple screenshots from video at different timestamps.
+  - Query Parameters:
+    - `url` (string, required): YouTube video URL.
+    - `second` (array of strings, optional, default: ['0']): Array of timestamps in seconds.
 
 ## Supported Transports
 
@@ -35,36 +58,33 @@ This project provides a Model Context Protocol (MCP) server that connects AI ass
 
 ### CLI
 
+This server can be extended with CLI commands. Currently, the primary interaction is via the HTTP API endpoints for the VidCap YouTube API.
+
+Example of running the server (which exposes the API):
 ```bash
-# Take a screenshot of a URL
-npm run dev:cli -- take-screenshot --url "https://example.com" --access-key "your-access-key"
+npm run dev:server:http
+```
 
-# Take a screenshot with custom viewport
-npm run dev:cli -- take-screenshot --url "https://example.com" --viewport-width 1920 --viewport-height 1080
+Examples of running the CLI commands:
 
-# Capture a full page screenshot
-npm run dev:cli -- take-screenshot --url "https://example.com" --full-page
+```bash
+# Get YouTube video information
+npm run dev:cli -- youtube getInfo --url "<your_youtube_url>" --cache true
 
-# Save the screenshot to a file
-npm run dev:cli -- take-screenshot --url "https://example.com" --output screenshot.png
+# Get available media formats for a YouTube video
+npm run dev:cli -- youtube getMedia --url "<your_youtube_url>"
 
-# Block ads and trackers
-npm run dev:cli -- take-screenshot --url "https://example.com" --block-ads --block-trackers --block-cookie-banners
+# Get video captions/transcript
+npm run dev:cli -- youtube getCaption --url "<your_youtube_url>" --locale "en" --model "<optional_model>"
 
-# ----------------------------------------------
-# UPLOAD SCREENSHOT TO CLOUDFLARE
-# REMEMBER TO SET THE ENVIRONMENT VARIABLES
-# > See example at ".env.example" file
-# ----------------------------------------------
+# Get AI-generated summary of video content
+npm run dev:cli -- youtube getSummary --url "<your_youtube_url>" --locale "en" --model "<optional_model>" --screenshot "0" --cache true
 
-# Take a screenshot and upload it to Cloudflare
-npm run dev:cli -- take-screenshot --url https://example.com --upload
+# Get screenshot from video at specific timestamp
+npm run dev:cli -- youtube getScreenshot --url "<your_youtube_url>" --second "30"
 
-# Take a screenshot with a custom filename
-npm run dev:cli -- take-screenshot --url https://example.com --upload --upload-filename my-screenshot
-
-# Take a screenshot with upload debugging enabled
-npm run dev:cli -- take-screenshot --url https://example.com --upload --upload-debug
+# Get multiple screenshots from video at different timestamps
+npm run dev:cli -- youtube getScreenshotMultiple --url "<your_youtube_url>" --seconds 10 30 60
 ```
 
 ### MCP Setup
@@ -73,9 +93,9 @@ npm run dev:cli -- take-screenshot --url https://example.com --upload --upload-d
 ```json
 {
   "mcpServers": {
-    "screenshotone": {
+    "vidcap-youtube-api": {
       "command": "node",
-      "args": ["/path/to/screenshotone-mcp-server/dist/index.js"],
+      "args": ["/path/to/vidcap-mcp-server/dist/index.js"],
       "transportType": "stdio"
     }
   }
@@ -86,7 +106,7 @@ npm run dev:cli -- take-screenshot --url https://example.com --upload --upload-d
 ```json
 {
   "mcpServers": {
-    "screenshotone": {
+    "vidcap-youtube-api": {
       "type": "http",
       "url": "http://localhost:8080/mcp"
     }
@@ -110,7 +130,7 @@ You can configure the HTTP server using these environment variables:
 
 Model Context Protocol (MCP) is an open standard that allows AI systems to securely and contextually connect with external tools and data sources.
 
-This boilerplate implements the MCP specification with a clean, layered architecture that can be extended to build custom MCP servers for any API or data source.
+This project implements the MCP specification with a clean, layered architecture. It serves as an example and boilerplate for building custom MCP servers, currently featuring integration with the VidCap YouTube API.
 
 ## Why Use This Boilerplate?
 
@@ -139,8 +159,8 @@ This boilerplate implements the MCP specification with a clean, layered architec
 
 ```bash
 # Clone the repository
-git clone https://github.com/mrgoonie/screenshotone-mcp-server.git
-cd screenshotone-mcp-server
+git clone https://github.com/mrgoonie/vidcap-mcp-server.git
+cd vidcap-mcp-server
 
 # Install dependencies
 npm install
@@ -171,17 +191,15 @@ When using HTTP transport, the server will be available at http://127.0.0.1:8080
 
 ---
 
-## Step 3: Test the Screenshot Tool
+## Step 3: Test the API Endpoints
 
-Take a screenshot using the CLI:
+Once the server is running (e.g., via `npm run dev:server:http`), you can test the VidCap YouTube API endpoints using a tool like `curl` or Postman.
 
+For example, to test the `/youtube/info` endpoint:
 ```bash
-# Basic screenshot
-npm run dev:cli -- take-screenshot --url "https://example.com" --access-key "your-access-key"
-
-# Advanced options
-npm run dev:cli -- take-screenshot --url "https://example.com" --format png --viewport-width 1920 --viewport-height 1080 --full-page --output screenshot.png
+curl "http://localhost:8080/api/v1/youtube/info?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 ```
+(Ensure your `VIDCAP_API_KEY` is set in your `.env` file and the server is running on the correct port.)
 
 ---
 
@@ -485,13 +503,13 @@ When ready to publish your custom MCP server:
 
 ```json
 {
-	"screenshotone": {
+	"vidcap-youtube-api": {
 		"environments": {
 			"DEBUG": "true",
-			"SCREENSHOTONE_ACCESS_KEY": "value"
+			"VIDCAP_API_KEY": "your_vidcap_api_key_here"
 		}
 	}
 }
 ```
 
-**Note:** For backward compatibility, the server will also recognize configurations under the full package name (`screenshotone-mcp-server`) or the unscoped package name (`screenshotone-mcp-server`) if the `screenshotone` key is not found. However, using the short `screenshotone` key is recommended for new configurations.
+**Note:** The key used in `~/.mcp/configs.json` (e.g., `vidcap-youtube-api`) should match the server name you prefer for your MCP client configuration.

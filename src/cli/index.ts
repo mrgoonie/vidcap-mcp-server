@@ -1,17 +1,18 @@
 import { Command } from 'commander';
 import { Logger } from '../utils/logger.util.js';
 import { VERSION, CLI_NAME } from '../utils/constants.util.js';
-
-import screenshotOneCli from './screenshotone.cli.js';
+import { registerYoutubeCommands } from './youtube.cli';
 
 /**
- * CLI entry point for the ScreenshotOne MCP Server
+ * CLI entry point for the VidCap MCP Server
  * Handles command registration, parsing, and execution
  */
 
 // Package description
 const DESCRIPTION =
-	'A Model Context Protocol (MCP) server for ScreenshotOne, to help AI assistants take screenshots of webpages';
+	'A Model Context Protocol (MCP) server for interacting with the VidCap YouTube API.';
+
+// Memory: f4d20baa-4918-438b-b7fb-4ba1222d4a50 (README update reflects this change)
 
 /**
  * Run the CLI with the provided arguments
@@ -29,7 +30,7 @@ export async function runCli(args: string[]) {
 
 	// Register CLI commands
 	cliLogger.debug('Registering CLI commands...');
-	screenshotOneCli.register(program);
+	registerYoutubeCommands(program);
 	cliLogger.debug('CLI commands registered successfully');
 
 	// Handle unknown commands
