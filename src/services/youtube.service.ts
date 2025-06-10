@@ -29,6 +29,49 @@ const apiClient = axios.create({
 	},
 });
 
+export const getVideoById = async (
+	id: string,
+): Promise<z.infer<typeof YoutubeInfoResponseSchema>> => {
+	try {
+		const response = await apiClient.get(`/youtube/video/${id}`);
+		logger.debug(
+			'Raw VidCap API response data for /youtube/video:',
+			response.data,
+		);
+		return YoutubeInfoResponseSchema.parse(response.data);
+	} catch (error) {
+		logger.error('Error in getVideoById:', error);
+		let errorMessage = 'Failed to fetch video information.';
+		if (error instanceof z.ZodError) {
+			errorMessage =
+				'Validation error processing API response for getVideoById.';
+			logger.error(
+				'Zod validation errors in getVideoById:',
+				error.errors,
+			);
+		} else if (axios.isAxiosError(error)) {
+			errorMessage = `API request failed for getVideoById: ${error.message}`;
+			if (error.response) {
+				logger.error(
+					'Axios error response data for getVideoById:',
+					error.response.data,
+				);
+			}
+		} else if (error instanceof Error) {
+			errorMessage = error.message;
+			logger.error('Generic error in getVideoById:', error);
+		} else {
+			logger.error('Unknown error type in getVideoById:', error);
+		}
+		logger.info(`getVideoById resolved to error state: ${errorMessage}`);
+		return YoutubeInfoResponseSchema.parse({
+			success: false,
+			data: null,
+			error: errorMessage,
+		});
+	}
+};
+
 /**
  * Fetches YouTube video information.
  * @param params - Query parameters including URL and cache option.
@@ -212,9 +255,16 @@ export const getYoutubeCaption = async (
 		);
 
 		if (parsedApiResponse.status === 1) {
+			const videoData = parsedApiResponse.data?.videoId
+				? await getVideoById(parsedApiResponse.data?.videoId)
+				: null;
+			const json = JSON.stringify({
+				video: videoData?.data,
+				caption: parsedApiResponse.data?.content,
+			});
 			return YoutubeCaptionResponseSchema.parse({
 				success: true,
-				data: parsedApiResponse.data?.content ?? null, // Use null if content is undefined
+				data: json,
 				error: null,
 			});
 		} else {
