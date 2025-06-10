@@ -29,27 +29,18 @@ const apiClient = axios.create({
 	},
 });
 
-export const getVideoById = async (
-	id: string,
-): Promise<z.infer<typeof YoutubeInfoResponseSchema>> => {
+export const getVideoById = async (id: string): Promise<any> => {
 	try {
 		const response = await apiClient.get(`/youtube/video/${id}`);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/video:',
 			response.data,
 		);
-		return YoutubeInfoResponseSchema.parse(response.data);
+		return response.data;
 	} catch (error) {
 		logger.error('Error in getVideoById:', error);
 		let errorMessage = 'Failed to fetch video information.';
-		if (error instanceof z.ZodError) {
-			errorMessage =
-				'Validation error processing API response for getVideoById.';
-			logger.error(
-				'Zod validation errors in getVideoById:',
-				error.errors,
-			);
-		} else if (axios.isAxiosError(error)) {
+		if (axios.isAxiosError(error)) {
 			errorMessage = `API request failed for getVideoById: ${error.message}`;
 			if (error.response) {
 				logger.error(
@@ -64,11 +55,11 @@ export const getVideoById = async (
 			logger.error('Unknown error type in getVideoById:', error);
 		}
 		logger.info(`getVideoById resolved to error state: ${errorMessage}`);
-		return YoutubeInfoResponseSchema.parse({
+		return {
 			success: false,
 			data: null,
 			error: errorMessage,
-		});
+		};
 	}
 };
 
