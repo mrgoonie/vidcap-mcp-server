@@ -599,16 +599,23 @@ export const getYoutubeComments = async (
 		};
 
 		if (transformedForParsing.success) {
-			// If the API call was successful and the expected nested data structure exists
+			// If the API call was successful and the expected data structure exists
 			if (rawApiResponse.data) {
-				// Extract the comments data according to the schema expectation
-				// Handle both data.data and data patterns for robustness
-				const commentsData =
-					rawApiResponse.data.data || rawApiResponse.data;
-				transformedForParsing.data = {
-					nextPageToken: commentsData.nextPageToken,
-					data: commentsData.data || commentsData.comments || [],
-				};
+				// Check if data is directly an array of comments (current API behavior)
+				if (Array.isArray(rawApiResponse.data)) {
+					transformedForParsing.data = {
+						nextPageToken: rawApiResponse.nextPageToken, // Check top level for pagination token
+						data: rawApiResponse.data, // Use the array of comments directly
+					};
+				} else {
+					// Handle nested structure for backward compatibility
+					const commentsData =
+						rawApiResponse.data.data || rawApiResponse.data;
+					transformedForParsing.data = {
+						nextPageToken: commentsData.nextPageToken,
+						data: commentsData.data || commentsData.comments || [],
+					};
+				}
 			} else {
 				// API reported success, but the crucial data field is missing
 				logger.warn(

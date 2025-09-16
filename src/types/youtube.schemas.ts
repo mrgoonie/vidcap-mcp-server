@@ -183,6 +183,35 @@ export const YoutubeCommentsQuerySchema = z
 		path: ['url', 'videoId'],
 	});
 
+// Simplified schema for MCP tool (videoId only)
+export const YoutubeCommentsToolSchema = z.object({
+	videoId: z.string().describe('YouTube video ID (e.g., dQw4w9WgXcQ)'),
+	order: z
+		.enum(['time', 'relevance'])
+		.optional()
+		.default('time')
+		.describe('Sort order for comments'),
+	format: z
+		.enum(['plainText', 'html'])
+		.optional()
+		.default('plainText')
+		.describe('Format of comment text'),
+	pageToken: z
+		.string()
+		.optional()
+		.describe('Pagination token for retrieving next page'),
+	includeReplies: z
+		.boolean()
+		.optional()
+		.default(false)
+		.describe('Include comment replies'),
+	hl: z
+		.string()
+		.optional()
+		.default('en')
+		.describe('Language code for comments'),
+});
+
 export const YoutubeCommentSchema = z.object({
 	id: z.string(),
 	videoId: z.string(),
