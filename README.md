@@ -2,8 +2,8 @@
 
 This project provides a Model Context Protocol (MCP) server that acts as a proxy to the VidCap YouTube API, allowing AI assistants to easily access YouTube video data and functionalities. It also serves as a boilerplate for building custom MCP servers.
 
-- [Github](https://github.com/mrgoonie/vidcap-mcp-server) 
-- [NPM](https://www.npmjs.com/package/vidcap-mcp-server) 
+- [Github](https://github.com/mrgoonie/vidcap-mcp-server)
+- [NPM](https://www.npmjs.com/package/vidcap-mcp-server)
 
 ## VidCap YouTube API
 
@@ -12,45 +12,55 @@ This server also proxies requests to the VidCap YouTube API, providing convenien
 Endpoints are available under the `/api/v1/youtube/` path:
 
 - **GET `/info`**
-  - Description: Get and save YouTube video information.
-  - Query Parameters:
-    - `url` (string, required): YouTube video URL.
-    - `cache` (boolean, optional, default: true): Whether to cache video info.
+    - Description: Get and save YouTube video information.
+    - Query Parameters:
+        - `url` (string, required): YouTube video URL.
+        - `cache` (boolean, optional, default: true): Whether to cache video info.
 - **GET `/media`**
-  - Description: Get available media formats for a YouTube video.
-  - Query Parameters:
-    - `url` (string, required): YouTube video URL.
+    - Description: Get available media formats for a YouTube video.
+    - Query Parameters:
+        - `url` (string, required): YouTube video URL.
 - **GET `/caption`**
-  - Description: Get video captions/transcript.
-  - Query Parameters:
-    - `url` (string, required): YouTube video URL.
-    - `locale` (string, optional, default: 'en'): Language code for captions.
-    - `model` (string, optional): AI model for processing.
-    - `ext` (enum, optional): File extension for captions (json3, srv1, srv2, srv3, ttml, vtt).
+    - Description: Get video captions/transcript.
+    - Query Parameters:
+        - `url` (string, required): YouTube video URL.
+        - `locale` (string, optional, default: 'en'): Language code for captions.
+        - `model` (string, optional): AI model for processing.
+        - `ext` (enum, optional): File extension for captions (json3, srv1, srv2, srv3, ttml, vtt).
 - **GET `/summary`**
-  - Description: Get AI-generated summary of video content.
-  - Query Parameters:
-    - `url` (string, required): YouTube video URL.
-    - `locale` (string, optional, default: 'en'): Target language code for summary.
-    - `model` (string, optional): AI model for summarization.
-    - `screenshot` (string, optional, default: '0'): '1' to enable auto-screenshots for summary parts.
-    - `cache` (boolean, optional): Whether to use cached results.
+    - Description: Get AI-generated summary of video content.
+    - Query Parameters:
+        - `url` (string, required): YouTube video URL.
+        - `locale` (string, optional, default: 'en'): Target language code for summary.
+        - `model` (string, optional): AI model for summarization.
+        - `screenshot` (string, optional, default: '0'): '1' to enable auto-screenshots for summary parts.
+        - `cache` (boolean, optional): Whether to use cached results.
 - **GET `/screenshot`**
-  - Description: Get screenshot from video at specific timestamp.
-  - Query Parameters:
-    - `url` (string, required): YouTube video URL.
-    - `second` (string, optional, default: '0'): Timestamp in seconds or YouTube time format.
+    - Description: Get screenshot from video at specific timestamp.
+    - Query Parameters:
+        - `url` (string, required): YouTube video URL.
+        - `second` (string, optional, default: '0'): Timestamp in seconds or YouTube time format.
 - **GET `/screenshot-multiple`**
-  - Description: Get multiple screenshots from video at different timestamps.
-  - Query Parameters:
-    - `url` (string, required): YouTube video URL.
-    - `second` (array of strings, optional, default: ['0']): Array of timestamps in seconds.
+    - Description: Get multiple screenshots from video at different timestamps.
+    - Query Parameters:
+        - `url` (string, required): YouTube video URL.
+        - `second` (array of strings, optional, default: ['0']): Array of timestamps in seconds.
+- **GET `/comments`**
+    - Description: Get YouTube video comments with optional pagination and replies.
+    - Query Parameters:
+        - `url` (string, optional): YouTube video URL.
+        - `videoId` (string, optional): YouTube video ID. Note: Either `url` or `videoId` is required.
+        - `order` (enum, optional, default: 'time'): Sort order for comments ('time', 'relevance').
+        - `format` (enum, optional, default: 'plainText'): Format of comment text ('plainText', 'html').
+        - `pageToken` (string, optional): Pagination token for retrieving next page of comments.
+        - `includeReplies` (boolean, optional, default: false): Include comment replies.
+        - `hl` (string, optional, default: 'en'): Language code for comments.
 
 ## Supported Transports
 
 - [x] ["stdio"](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#stdio) transport - Default transport for CLI usage
 - [x] ["Streamable HTTP"](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http) transport - For web-based clients
-  - [ ] Implement auth ("Authorization" headers with `Bearer <token>`)
+    - [ ] Implement auth ("Authorization" headers with `Bearer <token>`)
 - [ ] ~~"sse" transport~~ **[(Deprecated)](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#backwards-compatibility)**
 - [ ] Write tests
 
@@ -61,6 +71,7 @@ Endpoints are available under the `/api/v1/youtube/` path:
 This server can be extended with CLI commands. Currently, the primary interaction is via the HTTP API endpoints for the VidCap YouTube API.
 
 Example of running the server (which exposes the API):
+
 ```bash
 npm run dev:server:http
 ```
@@ -85,32 +96,40 @@ npm run dev:cli -- youtube getScreenshot --url "<your_youtube_url>" --second "30
 
 # Get multiple screenshots from video at different timestamps
 npm run dev:cli -- youtube getScreenshotMultiple --url "<your_youtube_url>" --seconds 10 30 60
+
+# Get YouTube video comments with pagination and replies
+npm run dev:cli -- youtube getComments --url "<your_youtube_url>" --includeReplies --order relevance
+
+# Get YouTube video comments using videoId with specific page
+npm run dev:cli -- youtube getComments --videoId "dQw4w9WgXcQ" --pageToken "<next_page_token>"
 ```
 
 ### MCP Setup
 
 **For local configuration with stdio transport:**
+
 ```json
 {
-  "mcpServers": {
-    "vidcap-youtube-api": {
-      "command": "node",
-      "args": ["/path/to/vidcap-mcp-server/dist/index.js"],
-      "transportType": "stdio"
-    }
-  }
+	"mcpServers": {
+		"vidcap-youtube-api": {
+			"command": "node",
+			"args": ["/path/to/vidcap-mcp-server/dist/index.js"],
+			"transportType": "stdio"
+		}
+	}
 }
 ```
 
 **For remote HTTP configuration:**
+
 ```json
 {
-  "mcpServers": {
-    "vidcap-youtube-api": {
-      "type": "http",
-      "url": "http://localhost:8080/mcp"
-    }
-  }
+	"mcpServers": {
+		"vidcap-youtube-api": {
+			"type": "http",
+			"url": "http://localhost:8080/mcp"
+		}
+	}
 }
 ```
 
@@ -196,9 +215,11 @@ When using HTTP transport, the server will be available at http://127.0.0.1:8080
 Once the server is running (e.g., via `npm run dev:server:http`), you can test the VidCap YouTube API endpoints using a tool like `curl` or Postman.
 
 For example, to test the `/youtube/info` endpoint:
+
 ```bash
 curl "http://localhost:8080/api/v1/youtube/info?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 ```
+
 (Ensure your `VIDCAP_API_KEY` is set in your `.env` file and the server is running on the correct port.)
 
 ---

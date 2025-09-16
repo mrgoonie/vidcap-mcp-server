@@ -11,6 +11,7 @@ import {
 	YoutubeSummaryQuerySchema,
 	YoutubeScreenshotQuerySchema,
 	YoutubeScreenshotMultipleQuerySchema,
+	YoutubeCommentsQuerySchema,
 } from '../types/youtube.schemas';
 // ControllerResponse is not directly used here when calling services
 
@@ -123,6 +124,44 @@ export function register(server: McpServer) {
 				args,
 				'youtube_getScreenshotMultiple',
 			),
+	);
+
+	server.tool(
+		'youtube_getComments',
+		'Get YouTube video comments with optional pagination and replies. Provide either a video URL or a videoId.',
+		{
+			url: { type: 'string' },
+			videoId: { type: 'string' },
+			order: { type: 'string' },
+			format: { type: 'string' },
+			pageToken: { type: 'string' },
+			includeReplies: { type: 'boolean' },
+			hl: { type: 'string' },
+		},
+		async (args: any) => {
+			try {
+				// Validate with Zod schema before calling service
+				const validatedArgs = YoutubeCommentsQuerySchema.parse(args);
+				return handleServiceToolExecution(
+					YoutubeService.getYoutubeComments,
+					validatedArgs,
+					'youtube_getComments',
+				);
+			} catch (error) {
+				if (error instanceof z.ZodError) {
+					logger.error(
+						'Validation error in youtube_getComments:',
+						error.errors,
+					);
+					return formatErrorForMcpTool(
+						new Error(
+							`Validation failed: ${error.errors.map((e) => e.message).join(', ')}`,
+						),
+					);
+				}
+				return formatErrorForMcpTool(error);
+			}
+		},
 	);
 
 	logger.info('YouTube tools registered');

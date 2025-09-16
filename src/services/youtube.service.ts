@@ -14,6 +14,8 @@ import {
 	YoutubeScreenshotResponseSchema,
 	YoutubeScreenshotMultipleQuerySchema,
 	YoutubeScreenshotMultipleResponseSchema,
+	YoutubeCommentsQuerySchema,
+	YoutubeCommentsResponseSchema,
 } from '../types/youtube.schemas';
 import { z } from 'zod';
 import { Logger } from '../utils/logger.util.js';
@@ -563,6 +565,91 @@ export const getYoutubeScreenshotMultiple = async (
 			`getYoutubeScreenshotMultiple resolved to error state: ${errorMessage}`,
 		);
 		return YoutubeScreenshotMultipleResponseSchema.parse({
+			success: false,
+			data: null,
+			error: errorMessage,
+		});
+	}
+};
+
+/**
+ * Fetches YouTube video comments with optional pagination and replies.
+ * @param params - Query parameters including URL/videoId, order, format, pagination, and replies.
+ * @returns Parsed comments data.
+ */
+export const getYoutubeComments = async (
+	params: z.infer<typeof YoutubeCommentsQuerySchema>,
+): Promise<z.infer<typeof YoutubeCommentsResponseSchema>> => {
+	try {
+		const response = await apiClient.get('/youtube/comments', { params });
+		logger.debug(
+			'Raw VidCap API response data for /youtube/comments:',
+			response.data,
+		);
+
+		const rawApiResponse = response.data as any; // Use 'as any' for easier raw access
+
+		// Prepare the object for Zod parsing according to YoutubeCommentsResponseSchema
+		const transformedForParsing: z.infer<
+			typeof YoutubeCommentsResponseSchema
+		> = {
+			success: rawApiResponse.status === 1,
+			data: null, // Initialize data as null
+			error: undefined as string | undefined, // Initialize error as undefined
+		};
+
+		if (transformedForParsing.success) {
+			// If the API call was successful and the expected nested data structure exists
+			if (rawApiResponse.data) {
+				// Extract the comments data according to the schema expectation
+				// Handle both data.data and data patterns for robustness
+				const commentsData =
+					rawApiResponse.data.data || rawApiResponse.data;
+				transformedForParsing.data = {
+					nextPageToken: commentsData.nextPageToken,
+					data: commentsData.data || commentsData.comments || [],
+				};
+			} else {
+				// API reported success, but the crucial data field is missing
+				logger.warn(
+					'API response for getYoutubeComments: data field is missing, but status is 1.',
+				);
+			}
+		} else {
+			// API call was not successful (status !== 1)
+			transformedForParsing.error =
+				rawApiResponse.message || 'API request indicated failure.';
+		}
+
+		return YoutubeCommentsResponseSchema.parse(transformedForParsing);
+	} catch (error) {
+		logger.error('Error in getYoutubeComments:', error);
+		let errorMessage = 'Failed to fetch YouTube video comments.';
+		if (error instanceof z.ZodError) {
+			errorMessage =
+				'Validation error processing API response for getYoutubeComments.';
+			logger.error(
+				'Zod validation errors in getYoutubeComments:',
+				error.errors,
+			);
+		} else if (axios.isAxiosError(error)) {
+			errorMessage = `API request failed for getYoutubeComments: ${error.message}`;
+			if (error.response) {
+				logger.error(
+					'Axios error response data for getYoutubeComments:',
+					error.response.data,
+				);
+			}
+		} else if (error instanceof Error) {
+			errorMessage = error.message;
+			logger.error('Generic error in getYoutubeComments:', error);
+		} else {
+			logger.error('Unknown error type in getYoutubeComments:', error);
+		}
+		logger.info(
+			`getYoutubeComments resolved to error state: ${errorMessage}`,
+		);
+		return YoutubeCommentsResponseSchema.parse({
 			success: false,
 			data: null,
 			error: errorMessage,

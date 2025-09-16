@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Command } from 'commander';
 import { z } from 'zod';
 import {
@@ -8,6 +7,7 @@ import {
 	YoutubeSummaryQuerySchema,
 	YoutubeScreenshotQuerySchema,
 	YoutubeScreenshotMultipleQuerySchema,
+	YoutubeCommentsQuerySchema,
 } from '../types/youtube.schemas';
 import * as youtubeController from '../controllers/youtube.controller';
 import { Logger } from '../utils/logger.util';
@@ -55,9 +55,8 @@ export function registerYoutubeCommands(program: Command) {
 					'Parsed CLI options for getCaption:',
 					parsedOptions,
 				);
-				const result = await youtubeController.getYoutubeCaptionCli(
-					parsedOptions,
-				);
+				const result =
+					await youtubeController.getYoutubeCaptionCli(parsedOptions);
 
 				if (result.success) {
 					console.log(JSON.stringify(result.data, null, 2));
@@ -113,14 +112,13 @@ export function registerYoutubeCommands(program: Command) {
 						options.cache === 'false'
 							? false
 							: options.cache === 'true'
-							? true
-							: undefined,
+								? true
+								: undefined,
 				});
 
 				logger.debug('Parsed CLI options for getInfo:', parsedOptions);
-				const result = await youtubeController.getYoutubeInfoCli(
-					parsedOptions,
-				);
+				const result =
+					await youtubeController.getYoutubeInfoCli(parsedOptions);
 
 				if (result.success) {
 					console.log(JSON.stringify(result.data, null, 2));
@@ -171,9 +169,8 @@ export function registerYoutubeCommands(program: Command) {
 				});
 
 				logger.debug('Parsed CLI options for getMedia:', parsedOptions);
-				const result = await youtubeController.getYoutubeMediaCli(
-					parsedOptions,
-				);
+				const result =
+					await youtubeController.getYoutubeMediaCli(parsedOptions);
 
 				if (result.success) {
 					console.log(JSON.stringify(result.data, null, 2));
@@ -238,17 +235,16 @@ export function registerYoutubeCommands(program: Command) {
 						options.cache === 'false'
 							? false
 							: options.cache === 'true'
-							? true
-							: undefined,
+								? true
+								: undefined,
 				});
 
 				logger.debug(
 					'Parsed CLI options for getSummary:',
 					parsedOptions,
 				);
-				const result = await youtubeController.getYoutubeSummaryCli(
-					parsedOptions,
-				);
+				const result =
+					await youtubeController.getYoutubeSummaryCli(parsedOptions);
 
 				if (result.success) {
 					console.log(JSON.stringify(result.data, null, 2));
@@ -307,9 +303,10 @@ export function registerYoutubeCommands(program: Command) {
 					'Parsed CLI options for getScreenshot:',
 					parsedOptions,
 				);
-				const result = await youtubeController.getYoutubeScreenshotCli(
-					parsedOptions,
-				);
+				const result =
+					await youtubeController.getYoutubeScreenshotCli(
+						parsedOptions,
+					);
 
 				if (result.success) {
 					console.log(JSON.stringify(result.data, null, 2));
@@ -393,6 +390,91 @@ export function registerYoutubeCommands(program: Command) {
 			} catch (error: any) {
 				logger.error(
 					'Error in youtube getScreenshotMultiple CLI command:',
+					error,
+				);
+				if (error instanceof z.ZodError) {
+					console.error(
+						'Validation Error:',
+						error.errors
+							.map((e) => `${e.path.join('.')} - ${e.message}`)
+							.join('\n'),
+					);
+				} else {
+					console.error(
+						'An unexpected error occurred:',
+						error.message || error,
+					);
+				}
+				process.exit(1);
+			}
+		});
+
+	// YouTube Comments Command
+	youtubeCommand
+		.command('getComments')
+		.description(
+			'Get YouTube video comments with optional pagination and replies.',
+		)
+		.option('-u, --url <url>', 'YouTube video URL')
+		.option('-v, --videoId <videoId>', 'YouTube video ID')
+		.option(
+			'-o, --order <order>',
+			'Sort order for comments (time, relevance). Default: time',
+		)
+		.option(
+			'-f, --format <format>',
+			'Format of comment text (plainText, html). Default: plainText',
+		)
+		.option('-p, --pageToken <pageToken>', 'Pagination token for next page')
+		.option(
+			'-r, --includeReplies',
+			'Include comment replies. Default: false',
+		)
+		.option('-l, --hl <hl>', 'Language code for comments. Default: en')
+		.action(async (options) => {
+			logger.debug(
+				'youtube getComments CLI command invoked with options:',
+				options,
+			);
+			try {
+				// Validate that either URL or videoId is provided
+				if (!options.url && !options.videoId) {
+					console.error(
+						'Error: Either --url or --videoId option is required.',
+					);
+					process.exit(1);
+				}
+
+				const parsedOptions = YoutubeCommentsQuerySchema.parse({
+					url: options.url,
+					videoId: options.videoId,
+					order: options.order,
+					format: options.format,
+					pageToken: options.pageToken,
+					includeReplies: options.includeReplies || false,
+					hl: options.hl,
+				});
+
+				logger.debug(
+					'Parsed CLI options for getComments:',
+					parsedOptions,
+				);
+				const result =
+					await youtubeController.getYoutubeCommentsCli(
+						parsedOptions,
+					);
+
+				if (result.success) {
+					console.log(JSON.stringify(result.data, null, 2));
+				} else {
+					console.error(
+						'Error fetching comments:',
+						result.error || 'Unknown error',
+					);
+				}
+			} catch (error: any) {
+				logger.error(
+					'Error in youtube getComments CLI command:',
 					error,
 				);
 				if (error instanceof z.ZodError) {

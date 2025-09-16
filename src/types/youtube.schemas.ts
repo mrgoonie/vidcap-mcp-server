@@ -166,3 +166,39 @@ export const YoutubeScreenshotMultipleDataSchema = z.object({
 export const YoutubeScreenshotMultipleResponseSchema = successDataSchema(
 	YoutubeScreenshotMultipleDataSchema,
 );
+
+// /youtube/comments
+export const YoutubeCommentsQuerySchema = z
+	.object({
+		url: z.string().url().optional(),
+		videoId: z.string().optional(),
+		order: z.enum(['time', 'relevance']).optional().default('time'),
+		format: z.enum(['plainText', 'html']).optional().default('plainText'),
+		pageToken: z.string().optional(),
+		includeReplies: z.boolean().optional().default(false),
+		hl: z.string().optional().default('en'),
+	})
+	.refine((data) => data.url || data.videoId, {
+		message: 'Either url or videoId must be provided',
+		path: ['url', 'videoId'],
+	});
+
+export const YoutubeCommentSchema = z.object({
+	id: z.string(),
+	videoId: z.string(),
+	textOriginal: z.string(),
+	authorDisplayName: z.string(),
+	likeCount: z.number(),
+	publishedAt: z.string(),
+	totalReplyCount: z.number(),
+	replies: z.array(z.any()).optional(),
+});
+
+export const YoutubeCommentsDataSchema = z.object({
+	nextPageToken: z.string().optional(),
+	data: z.array(YoutubeCommentSchema),
+});
+
+export const YoutubeCommentsResponseSchema = successDataSchema(
+	YoutubeCommentsDataSchema,
+);
