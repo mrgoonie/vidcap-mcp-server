@@ -67,6 +67,17 @@ Endpoints are available under the `/api/v1/youtube/` path:
         - `pageToken` (string, optional): Pagination token for retrieving next page of comments.
         - `includeReplies` (boolean, optional, default: false): Include comment replies.
         - `hl` (string, optional, default: 'en'): Language code for comments.
+- **GET `/search`**
+    - Description: Search YouTube videos with comprehensive filtering and pagination support.
+    - Query Parameters:
+        - `query` (string, required): Search query for YouTube videos.
+        - `maxResults` (number, optional, default: 10): Maximum number of results to return (1-50).
+        - `order` (enum, optional, default: 'relevance'): Sort order for search results ('date', 'rating', 'relevance', 'title', 'videoCount', 'viewCount').
+        - `publishedAfter` (string, optional): Filter videos published after this date (ISO 8601 format).
+        - `publishedBefore` (string, optional): Filter videos published before this date (ISO 8601 format).
+        - `videoDuration` (enum, optional, default: 'any'): Filter by video duration ('short', 'medium', 'long', 'any').
+        - `videoDefinition` (enum, optional, default: 'any'): Filter by video quality ('high', 'standard', 'any').
+        - `pageToken` (string, optional): Pagination token for retrieving next page of results.
 
 ## Supported Transports
 
@@ -114,11 +125,14 @@ npm run dev:cli -- youtube getComments --url "<your_youtube_url>" --includeRepli
 
 # Get YouTube video comments using videoId with specific page
 npm run dev:cli -- youtube getComments --videoId "dQw4w9WgXcQ" --pageToken "<next_page_token>"
+
+# Note: YouTube search functionality is currently available as an MCP tool only
+# Use the youtube_search tool through your MCP-compatible AI assistant
 ```
 
 # MCP Client Integration
 
-This server provides 7 YouTube-related MCP tools that can be integrated with any MCP-compatible AI assistant. The tools include video information retrieval, media format discovery, caption/transcript extraction, AI-powered summarization, screenshot capture, and comment analysis.
+This server provides 8 YouTube-related MCP tools that can be integrated with any MCP-compatible AI assistant. The tools include video information retrieval, media format discovery, caption/transcript extraction, AI-powered summarization, screenshot capture, comment analysis, and comprehensive video search.
 
 ## Quick Setup
 
@@ -441,6 +455,32 @@ Once configured, your AI assistant will have access to these tools:
 - **`youtube_getScreenshot`**: Capture screenshots at specific timestamps
 - **`youtube_getScreenshotMultiple`**: Batch capture multiple screenshots
 - **`youtube_getComments`**: Retrieve video comments with pagination and replies
+- **`youtube_search`**: Search YouTube videos with advanced filtering options (query, date range, duration, quality, sorting)
+
+### YouTube Search Tool Features
+
+The `youtube_search` tool provides powerful video discovery capabilities with multiple filtering options:
+
+**Basic Search:**
+- Search by keywords, phrases, or topics
+- Configurable result limits (1-50 videos per request)
+- Pagination support for browsing large result sets
+
+**Advanced Filtering:**
+- **Sort Options**: relevance, date, rating, title, videoCount, viewCount
+- **Duration Filters**: short (<4 min), medium (4-20 min), long (>20 min), or any
+- **Quality Filters**: high definition, standard definition, or any quality
+- **Date Range**: Filter videos published within specific date ranges
+- **Pagination**: Navigate through search results with page tokens
+
+**Example Use Cases:**
+- Find recent tutorials: `"Python tutorial"` + `order: "date"` + `videoDuration: "medium"`
+- Discover popular content: `"machine learning"` + `order: "viewCount"` + `maxResults: 25`
+- Research within timeframe: `"AI developments"` + `publishedAfter: "2024-01-01"`
+- Quality-focused search: `"4K nature documentary"` + `videoDefinition: "high"`
+
+**Response Data:**
+Each search result includes video metadata such as title, description, channel information, thumbnails, publication date, and engagement metrics (views, likes when available).
 
 ## Configuration Options
 
@@ -682,6 +722,18 @@ For example, to test the `/youtube/info` endpoint:
 ```bash
 curl "http://localhost:8080/api/v1/youtube/info?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 ```
+
+To test the `/youtube/search` endpoint (available via VidCap API):
+
+```bash
+# Basic search (replace YOUR_API_KEY with your actual VidCap API key)
+curl "https://vidcap.xyz/api/v1/youtube/search?query=machine%20learning%20tutorial&api_key=YOUR_API_KEY"
+
+# Advanced search with filters
+curl "https://vidcap.xyz/api/v1/youtube/search?query=Python%20programming&order=date&videoDuration=medium&maxResults=20&api_key=YOUR_API_KEY"
+```
+
+Note: The search functionality is primarily designed for use through the MCP tool `youtube_search` rather than direct HTTP calls.
 
 (Ensure your `VIDCAP_API_KEY` is set in your `.env` file and the server is running on the correct port.)
 
