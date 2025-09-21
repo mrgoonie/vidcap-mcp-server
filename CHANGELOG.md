@@ -1,3 +1,19 @@
+# [1.1.0](https://github.com/mrgoonie/vidcap-mcp-server/compare/v1.0.0...v1.1.0) (2025-09-21)
+
+
+### Bug Fixes
+
+* **caption:** add video info to improve context ([efaea43](https://github.com/mrgoonie/vidcap-mcp-server/commit/efaea43736f3f32a94acfccd4b7c9bf3fbb3cfc7))
+* **opencode:** add agents and commands ([ba9ab14](https://github.com/mrgoonie/vidcap-mcp-server/commit/ba9ab140ef194caac1cd4f75537cdbace9f0496a))
+* **video:** improve errors ([d49b590](https://github.com/mrgoonie/vidcap-mcp-server/commit/d49b590b57aa585dfe76238803fa5fb0a0fcc5bd))
+
+
+### Features
+
+* **api:** add API key query parameter support ([2e3ac05](https://github.com/mrgoonie/vidcap-mcp-server/commit/2e3ac05693ab35a2cd930c8a03934a9fb697134f))
+* **youtube:** add getComments tool for retrieving video comments with pagination ([51049bf](https://github.com/mrgoonie/vidcap-mcp-server/commit/51049bf76555d782dedc4f13c004834989812f82))
+* **youtube:** add YouTube comments retrieval tool with pagination and formatting ([eeb3b15](https://github.com/mrgoonie/vidcap-mcp-server/commit/eeb3b15d62cbfe45b5a86156a0d772f89f3eaa49))
+
 # 1.0.0 (2025-06-07)
 
 
