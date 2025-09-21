@@ -231,3 +231,74 @@ export const YoutubeCommentsDataSchema = z.object({
 export const YoutubeCommentsResponseSchema = successDataSchema(
 	YoutubeCommentsDataSchema,
 );
+
+// /youtube/search
+export const YoutubeSearchQuerySchema = z.object({
+	query: z.string().describe('Search query for YouTube videos'),
+	maxResults: z
+		.number()
+		.min(1)
+		.max(50)
+		.optional()
+		.default(10)
+		.describe('Maximum number of results to return (1-50)'),
+	order: z
+		.enum([
+			'date',
+			'rating',
+			'relevance',
+			'title',
+			'videoCount',
+			'viewCount',
+		])
+		.optional()
+		.default('relevance')
+		.describe('Sort order for search results'),
+	publishedAfter: z
+		.string()
+		.optional()
+		.describe('Filter videos published after this date (ISO 8601 format)'),
+	publishedBefore: z
+		.string()
+		.optional()
+		.describe('Filter videos published before this date (ISO 8601 format)'),
+	videoDuration: z
+		.enum(['short', 'medium', 'long', 'any'])
+		.optional()
+		.default('any')
+		.describe('Filter by video duration'),
+	videoDefinition: z
+		.enum(['high', 'standard', 'any'])
+		.optional()
+		.default('any')
+		.describe('Filter by video quality'),
+	pageToken: z
+		.string()
+		.optional()
+		.describe('Pagination token for retrieving next page'),
+});
+
+export const YoutubeSearchResultSchema = z.object({
+	videoId: z.string(),
+	title: z.string(),
+	description: z.string(),
+	channelId: z.string(),
+	channelTitle: z.string(),
+	publishedAt: z.string(),
+	thumbnailUrl: z.string().url(),
+	duration: z.string().optional(),
+	viewCount: z.number().optional(),
+	likeCount: z.number().optional(),
+});
+
+export const YoutubeSearchDataSchema = z.object({
+	nextPageToken: z.string().optional(),
+	prevPageToken: z.string().optional(),
+	totalResults: z.number().optional(),
+	resultsPerPage: z.number().optional(),
+	items: z.array(YoutubeSearchResultSchema),
+});
+
+export const YoutubeSearchResponseSchema = successDataSchema(
+	YoutubeSearchDataSchema,
+);

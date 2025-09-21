@@ -16,6 +16,8 @@ import {
 	YoutubeScreenshotMultipleResponseSchema,
 	YoutubeCommentsQuerySchema,
 	YoutubeCommentsResponseSchema,
+	YoutubeSearchQuerySchema,
+	YoutubeSearchResponseSchema,
 } from '../types/youtube.schemas';
 import { z } from 'zod';
 import { Logger } from '../utils/logger.util.js';
@@ -681,6 +683,114 @@ export const getYoutubeComments = async (
 			`getYoutubeComments resolved to error state: ${errorMessage}`,
 		);
 		return YoutubeCommentsResponseSchema.parse({
+			success: false,
+			data: null,
+			error: errorMessage,
+		});
+	}
+};
+
+/**
+ * Searches YouTube videos based on query parameters.
+ * @param params - Query parameters including search query, pagination, and filters.
+ * @returns Parsed search results data.
+ */
+export const getYoutubeSearch = async (
+	params: z.infer<typeof YoutubeSearchQuerySchema>,
+): Promise<z.infer<typeof YoutubeSearchResponseSchema>> => {
+	try {
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/search`,
+			{ params },
+		);
+		logger.debug(
+			'Raw VidCap API response data for /youtube/search:',
+			response.data,
+		);
+
+		const rawApiResponse = response.data as any; // Use 'as any' for easier raw access
+
+		// Prepare the object for Zod parsing according to YoutubeSearchResponseSchema
+		const transformedForParsing: z.infer<
+			typeof YoutubeSearchResponseSchema
+		> = {
+			success: rawApiResponse.status === 1,
+			data: null, // Initialize data as null
+			error: undefined as string | undefined, // Initialize error as undefined
+		};
+
+		if (transformedForParsing.success) {
+			// If the API call was successful and the expected data structure exists
+			if (rawApiResponse.data) {
+				// Check if data is directly the search results structure
+				if (
+					rawApiResponse.data.items ||
+					Array.isArray(rawApiResponse.data)
+				) {
+					const searchData = rawApiResponse.data;
+					transformedForParsing.data = {
+						nextPageToken: searchData.nextPageToken,
+						prevPageToken: searchData.prevPageToken,
+						totalResults: searchData.totalResults,
+						resultsPerPage: searchData.resultsPerPage,
+						items: Array.isArray(searchData)
+							? searchData
+							: searchData.items || [],
+					};
+				} else {
+					// Handle nested structure for backward compatibility
+					const searchData =
+						rawApiResponse.data.data || rawApiResponse.data;
+					transformedForParsing.data = {
+						nextPageToken: searchData.nextPageToken,
+						prevPageToken: searchData.prevPageToken,
+						totalResults: searchData.totalResults,
+						resultsPerPage: searchData.resultsPerPage,
+						items: searchData.items || searchData.results || [],
+					};
+				}
+			} else {
+				// API reported success, but the crucial data field is missing
+				logger.warn(
+					'API response for getYoutubeSearch: data field is missing, but status is 1.',
+				);
+			}
+		} else {
+			// API call was not successful (status !== 1)
+			transformedForParsing.error =
+				rawApiResponse.message || 'API request indicated failure.';
+		}
+
+		return YoutubeSearchResponseSchema.parse(transformedForParsing);
+	} catch (error) {
+		logger.error('Error in getYoutubeSearch:', error);
+		let errorMessage = 'Failed to search YouTube videos.';
+		if (error instanceof z.ZodError) {
+			errorMessage =
+				'Validation error processing API response for getYoutubeSearch.';
+			logger.error(
+				'Zod validation errors in getYoutubeSearch:',
+				error.errors,
+			);
+		} else if (axios.isAxiosError(error)) {
+			errorMessage = `API request failed for getYoutubeSearch: ${error.message}`;
+			if (error.response) {
+				logger.error(
+					'Axios error response data for getYoutubeSearch:',
+					error.response.data,
+				);
+			}
+		} else if (error instanceof Error) {
+			errorMessage = error.message;
+			logger.error('Generic error in getYoutubeSearch:', error);
+		} else {
+			logger.error('Unknown error type in getYoutubeSearch:', error);
+		}
+		logger.info(
+			`getYoutubeSearch resolved to error state: ${errorMessage}`,
+		);
+		return YoutubeSearchResponseSchema.parse({
 			success: false,
 			data: null,
 			error: errorMessage,
