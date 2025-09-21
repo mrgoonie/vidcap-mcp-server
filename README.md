@@ -104,42 +104,246 @@ npm run dev:cli -- youtube getComments --url "<your_youtube_url>" --includeRepli
 npm run dev:cli -- youtube getComments --videoId "dQw4w9WgXcQ" --pageToken "<next_page_token>"
 ```
 
-### MCP Setup
+# MCP Client Integration
 
-**For local configuration with stdio transport:**
+This server provides 7 YouTube-related MCP tools that can be integrated with any MCP-compatible AI assistant. The tools include video information retrieval, media format discovery, caption/transcript extraction, AI-powered summarization, screenshot capture, and comment analysis.
+
+## Quick Setup
+
+### 1. Get VidCap API Key
+
+1. Visit [vidcap.xyz](https://vidcap.xyz) to obtain your API key
+2. Set the API key in your environment or MCP client configuration
+
+### 2. Configure Your MCP Client
+
+The server is available on NPM and can be run directly with `npx` - no installation required!
+
+Choose your configuration method based on your AI assistant:
+
+## Claude Desktop Configuration
+
+Add to your Claude Desktop config file (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
 ```json
 {
-	"mcpServers": {
-		"vidcap-youtube-api": {
-			"command": "node",
-			"args": ["/path/to/vidcap-mcp-server/dist/index.js"],
-			"transportType": "stdio"
-		}
-	}
+  "mcpServers": {
+    "vidcap-youtube-api": {
+      "command": "npx",
+      "args": ["vidcap-mcp-server"],
+      "env": {
+        "VIDCAP_API_KEY": "your_api_key_here"
+      }
+    }
+  }
 }
 ```
 
-**For remote HTTP configuration:**
+**Alternative: Global Config**
+```bash
+# Create global MCP config
+mkdir -p ~/.mcp
+echo '{
+  "vidcap-youtube-api": {
+    "environments": {
+      "VIDCAP_API_KEY": "your_api_key_here",
+      "DEBUG": "false"
+    }
+  }
+}' > ~/.mcp/configs.json
+```
+
+## Claude Code (VS Code Extension)
+
+Add to your Claude Code settings:
 
 ```json
 {
-	"mcpServers": {
-		"vidcap-youtube-api": {
-			"type": "http",
-			"url": "http://localhost:8080/mcp"
-		}
-	}
+  "mcpServers": {
+    "vidcap-youtube-api": {
+      "command": "npx",
+      "args": ["vidcap-mcp-server"],
+      "transportType": "stdio",
+      "env": {
+        "VIDCAP_API_KEY": "your_api_key_here"
+      }
+    }
+  }
 }
 ```
 
-**Environment Variables for HTTP Transport:**
+## Cline (VS Code Extension)
 
-You can configure the HTTP server using these environment variables:
+Add to your Cline MCP configuration:
 
-- `MCP_HTTP_HOST`: The host to bind to (default: `127.0.0.1`)
-- `MCP_HTTP_PORT`: The port to listen on (default: `8080`)
-- `MCP_HTTP_PATH`: The endpoint path (default: `/mcp`)
+```json
+{
+  "mcpServers": {
+    "vidcap-youtube-api": {
+      "command": "npx",
+      "args": ["vidcap-mcp-server"],
+      "env": {
+        "VIDCAP_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+## Cursor Configuration
+
+Add to your Cursor MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "vidcap-youtube-api": {
+      "command": "npx",
+      "args": ["vidcap-mcp-server"],
+      "transportType": "stdio",
+      "env": {
+        "VIDCAP_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+## HTTP Transport Configuration
+
+For web-based clients or remote access:
+
+```json
+{
+  "mcpServers": {
+    "vidcap-youtube-api": {
+      "type": "http",
+      "url": "http://localhost:8080/mcp",
+      "env": {
+        "VIDCAP_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+**HTTP Server Environment Variables:**
+
+- `MCP_HTTP_HOST`: Host to bind to (default: `127.0.0.1`)
+- `MCP_HTTP_PORT`: Port to listen on (default: `8080`)
+- `MCP_HTTP_PATH`: Endpoint path (default: `/mcp`)
+
+**Start HTTP Server:**
+```bash
+# Using npx
+npx vidcap-mcp-server --http
+
+# Or with custom configuration
+MCP_HTTP_PORT=3000 npx vidcap-mcp-server --http
+
+# Using local development server
+npm run start:server:http
+```
+
+## Alternative Installation Methods
+
+### NPX (Recommended)
+The configurations above use `npx` which automatically downloads and runs the latest version without installation.
+
+### Global Installation
+For better performance or offline usage:
+
+```bash
+# Install globally
+npm install -g vidcap-mcp-server
+
+# Use in MCP config (replace npx with direct command)
+{
+  "mcpServers": {
+    "vidcap-youtube-api": {
+      "command": "vidcap-mcp-server",
+      "env": {
+        "VIDCAP_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+### Local Development
+For development or customization:
+
+```bash
+# Clone and build locally
+git clone https://github.com/mrgoonie/vidcap-mcp-server.git
+cd vidcap-mcp-server
+npm install
+npm run build
+
+# Use local build in MCP config
+{
+  "mcpServers": {
+    "vidcap-youtube-api": {
+      "command": "node",
+      "args": ["/path/to/vidcap-mcp-server/dist/index.js"],
+      "env": {
+        "VIDCAP_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+## Available MCP Tools
+
+Once configured, your AI assistant will have access to these tools:
+
+- **`youtube_getInfo`**: Get video metadata (title, description, duration, etc.)
+- **`youtube_getMedia`**: List available video/audio formats and quality options
+- **`youtube_getCaption`**: Extract captions/transcripts with timing information
+- **`youtube_getSummary`**: Generate AI-powered video content summaries
+- **`youtube_getScreenshot`**: Capture screenshots at specific timestamps
+- **`youtube_getScreenshotMultiple`**: Batch capture multiple screenshots
+- **`youtube_getComments`**: Retrieve video comments with pagination and replies
+
+## Configuration Options
+
+### API Key Sources (Priority Order)
+
+1. **Environment Variables**: `VIDCAP_API_KEY`
+2. **MCP Client Config**: `env.VIDCAP_API_KEY` in server config
+3. **Global MCP Config**: `~/.mcp/configs.json`
+4. **HTTP Query Parameter**: `?api_key=your_key` (HTTP transport only)
+
+### Debug Mode
+
+Enable detailed logging for troubleshooting:
+
+```json
+{
+  "env": {
+    "VIDCAP_API_KEY": "your_api_key_here",
+    "DEBUG": "true"
+  }
+}
+```
+
+### Troubleshooting
+
+**Server Not Starting:**
+- Verify Node.js version ≥18.x
+- Check that the build completed: `npm run build`
+- Ensure API key is properly set
+
+**Tools Not Available:**
+- Confirm MCP client supports stdio transport
+- Check server logs for connection errors
+- Verify file paths in configuration are absolute
+
+**API Errors:**
+- Validate your VidCap API key at vidcap.xyz
+- Check network connectivity
+- Review error messages in debug mode
 
 ---
 

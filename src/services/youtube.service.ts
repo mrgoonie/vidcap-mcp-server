@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { env } from '../env.js';
+import { getApiClient } from '../utils/apiClientFactory.js';
 import {
 	YoutubeInfoQuerySchema,
 	YoutubeInfoResponseSchema,
@@ -24,16 +24,12 @@ const logger = Logger.forContext('services/youtube.service.ts');
 
 const VIDCAP_API_BASE_URL = 'https://vidcap.xyz/api/v1';
 
-const apiClient = axios.create({
-	baseURL: VIDCAP_API_BASE_URL,
-	headers: {
-		'X-API-Key': env.VIDCAP_API_KEY,
-	},
-});
-
 export const getVideoById = async (id: string): Promise<any> => {
 	try {
-		const response = await apiClient.get(`/youtube/video/${id}`);
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/video/${id}`,
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/video:',
 			response.data,
@@ -74,7 +70,11 @@ export const getYoutubeInfo = async (
 	params: z.infer<typeof YoutubeInfoQuerySchema>,
 ): Promise<z.infer<typeof YoutubeInfoResponseSchema>> => {
 	try {
-		const response = await apiClient.get('/youtube/info', { params });
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/info`,
+			{ params },
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/info:',
 			response.data,
@@ -160,7 +160,11 @@ export const getYoutubeMedia = async (
 	params: z.infer<typeof YoutubeMediaQuerySchema>,
 ): Promise<z.infer<typeof YoutubeMediaResponseSchema>> => {
 	try {
-		const response = await apiClient.get('/youtube/media', { params });
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/media`,
+			{ params },
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/media:',
 			response.data,
@@ -237,7 +241,11 @@ export const getYoutubeCaption = async (
 	params: z.infer<typeof YoutubeCaptionQuerySchema>,
 ): Promise<z.infer<typeof YoutubeCaptionResponseSchema>> => {
 	try {
-		const apiResponse = await apiClient.get('/youtube/caption', { params });
+		const apiClient = getApiClient();
+		const apiResponse = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/caption`,
+			{ params },
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/caption:',
 			apiResponse.data,
@@ -315,7 +323,11 @@ export const getYoutubeSummary = async (
 	params: z.infer<typeof YoutubeSummaryQuerySchema>,
 ): Promise<z.infer<typeof YoutubeSummaryResponseSchema>> => {
 	try {
-		const response = await apiClient.get('/youtube/summary', { params });
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/summary`,
+			{ params },
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/summary:',
 			response.data,
@@ -406,7 +418,11 @@ export const getYoutubeScreenshot = async (
 	params: z.infer<typeof YoutubeScreenshotQuerySchema>,
 ): Promise<z.infer<typeof YoutubeScreenshotResponseSchema>> => {
 	try {
-		const response = await apiClient.get('/youtube/screenshot', { params });
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/screenshot`,
+			{ params },
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/screenshot:',
 			response.data,
@@ -490,9 +506,13 @@ export const getYoutubeScreenshotMultiple = async (
 		// arrays as second[]=value1&second[]=value2. We need to ensure the API expects this format.
 		// If it expects comma-separated values or a different format, paramsSerializer might be needed.
 		// Assuming default serialization works for now based on typical API behavior.
-		const response = await apiClient.get('/youtube/screenshot-multiple', {
-			params,
-		});
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/screenshot-multiple`,
+			{
+				params,
+			},
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/screenshot-multiple:',
 			response.data,
@@ -581,7 +601,11 @@ export const getYoutubeComments = async (
 	params: z.infer<typeof YoutubeCommentsQuerySchema>,
 ): Promise<z.infer<typeof YoutubeCommentsResponseSchema>> => {
 	try {
-		const response = await apiClient.get('/youtube/comments', { params });
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/comments`,
+			{ params },
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/comments:',
 			response.data,
