@@ -12,6 +12,7 @@ import {
 	YoutubeScreenshotQuerySchema,
 	YoutubeScreenshotMultipleQuerySchema,
 	YoutubeCommentsToolSchema,
+	YoutubeSearchQuerySchema,
 } from '../types/youtube.schemas';
 // ControllerResponse is not directly used here when calling services
 
@@ -135,6 +136,18 @@ export function register(server: McpServer) {
 				YoutubeService.getYoutubeComments,
 				args,
 				'youtube_getComments',
+			),
+	);
+
+	server.tool(
+		'youtube_search',
+		'Search YouTube videos with query and optional filters. Provide search query and optional parameters for pagination and filtering.',
+		YoutubeSearchQuerySchema.shape,
+		async (args: z.infer<typeof YoutubeSearchQuerySchema>) =>
+			handleServiceToolExecution(
+				YoutubeService.getYoutubeSearch,
+				args,
+				'youtube_search',
 			),
 	);
 
