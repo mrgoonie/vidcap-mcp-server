@@ -11,6 +11,7 @@ import {
 	YoutubeSummaryQuerySchema,
 	YoutubeScreenshotQuerySchema,
 	YoutubeScreenshotMultipleQuerySchema,
+	YoutubeCommentsToolSchema,
 } from '../types/youtube.schemas';
 // ControllerResponse is not directly used here when calling services
 
@@ -122,6 +123,18 @@ export function register(server: McpServer) {
 				YoutubeService.getYoutubeScreenshotMultiple,
 				args,
 				'youtube_getScreenshotMultiple',
+			),
+	);
+
+	server.tool(
+		'youtube_getComments',
+		'Get YouTube video comments with optional pagination and replies. Provide a YouTube video ID.',
+		YoutubeCommentsToolSchema.shape,
+		async (args: z.infer<typeof YoutubeCommentsToolSchema>) =>
+			handleServiceToolExecution(
+				YoutubeService.getYoutubeComments,
+				args,
+				'youtube_getComments',
 			),
 	);
 

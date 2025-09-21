@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { env } from '../env.js';
+import { getApiClient } from '../utils/apiClientFactory.js';
 import {
 	YoutubeInfoQuerySchema,
 	YoutubeInfoResponseSchema,
@@ -14,6 +14,8 @@ import {
 	YoutubeScreenshotResponseSchema,
 	YoutubeScreenshotMultipleQuerySchema,
 	YoutubeScreenshotMultipleResponseSchema,
+	YoutubeCommentsQuerySchema,
+	YoutubeCommentsResponseSchema,
 } from '../types/youtube.schemas';
 import { z } from 'zod';
 import { Logger } from '../utils/logger.util.js';
@@ -22,12 +24,42 @@ const logger = Logger.forContext('services/youtube.service.ts');
 
 const VIDCAP_API_BASE_URL = 'https://vidcap.xyz/api/v1';
 
-const apiClient = axios.create({
-	baseURL: VIDCAP_API_BASE_URL,
-	headers: {
-		'X-API-Key': env.VIDCAP_API_KEY,
-	},
-});
+export const getVideoById = async (id: string): Promise<any> => {
+	try {
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/video/${id}`,
+		);
+		logger.debug(
+			'Raw VidCap API response data for /youtube/video:',
+			response.data,
+		);
+		return response.data;
+	} catch (error) {
+		logger.error('Error in getVideoById:', error);
+		let errorMessage = 'Failed to fetch video information.';
+		if (axios.isAxiosError(error)) {
+			errorMessage = `API request failed for getVideoById: ${error.message}`;
+			if (error.response) {
+				logger.error(
+					'Axios error response data for getVideoById:',
+					error.response.data,
+				);
+			}
+		} else if (error instanceof Error) {
+			errorMessage = error.message;
+			logger.error('Generic error in getVideoById:', error);
+		} else {
+			logger.error('Unknown error type in getVideoById:', error);
+		}
+		logger.info(`getVideoById resolved to error state: ${errorMessage}`);
+		return {
+			success: false,
+			data: null,
+			error: errorMessage,
+		};
+	}
+};
 
 /**
  * Fetches YouTube video information.
@@ -38,7 +70,11 @@ export const getYoutubeInfo = async (
 	params: z.infer<typeof YoutubeInfoQuerySchema>,
 ): Promise<z.infer<typeof YoutubeInfoResponseSchema>> => {
 	try {
-		const response = await apiClient.get('/youtube/info', { params });
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/info`,
+			{ params },
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/info:',
 			response.data,
@@ -124,7 +160,11 @@ export const getYoutubeMedia = async (
 	params: z.infer<typeof YoutubeMediaQuerySchema>,
 ): Promise<z.infer<typeof YoutubeMediaResponseSchema>> => {
 	try {
-		const response = await apiClient.get('/youtube/media', { params });
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/media`,
+			{ params },
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/media:',
 			response.data,
@@ -201,7 +241,11 @@ export const getYoutubeCaption = async (
 	params: z.infer<typeof YoutubeCaptionQuerySchema>,
 ): Promise<z.infer<typeof YoutubeCaptionResponseSchema>> => {
 	try {
-		const apiResponse = await apiClient.get('/youtube/caption', { params });
+		const apiClient = getApiClient();
+		const apiResponse = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/caption`,
+			{ params },
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/caption:',
 			apiResponse.data,
@@ -212,9 +256,16 @@ export const getYoutubeCaption = async (
 		);
 
 		if (parsedApiResponse.status === 1) {
+			const videoData = parsedApiResponse.data?.videoId
+				? await getVideoById(parsedApiResponse.data?.videoId)
+				: null;
+			const json = JSON.stringify({
+				video: videoData?.data,
+				caption: parsedApiResponse.data?.content,
+			});
 			return YoutubeCaptionResponseSchema.parse({
 				success: true,
-				data: parsedApiResponse.data?.content ?? null, // Use null if content is undefined
+				data: json,
 				error: null,
 			});
 		} else {
@@ -272,7 +323,11 @@ export const getYoutubeSummary = async (
 	params: z.infer<typeof YoutubeSummaryQuerySchema>,
 ): Promise<z.infer<typeof YoutubeSummaryResponseSchema>> => {
 	try {
-		const response = await apiClient.get('/youtube/summary', { params });
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/summary`,
+			{ params },
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/summary:',
 			response.data,
@@ -363,7 +418,11 @@ export const getYoutubeScreenshot = async (
 	params: z.infer<typeof YoutubeScreenshotQuerySchema>,
 ): Promise<z.infer<typeof YoutubeScreenshotResponseSchema>> => {
 	try {
-		const response = await apiClient.get('/youtube/screenshot', { params });
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/screenshot`,
+			{ params },
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/screenshot:',
 			response.data,
@@ -447,9 +506,13 @@ export const getYoutubeScreenshotMultiple = async (
 		// arrays as second[]=value1&second[]=value2. We need to ensure the API expects this format.
 		// If it expects comma-separated values or a different format, paramsSerializer might be needed.
 		// Assuming default serialization works for now based on typical API behavior.
-		const response = await apiClient.get('/youtube/screenshot-multiple', {
-			params,
-		});
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/screenshot-multiple`,
+			{
+				params,
+			},
+		);
 		logger.debug(
 			'Raw VidCap API response data for /youtube/screenshot-multiple:',
 			response.data,
@@ -522,6 +585,102 @@ export const getYoutubeScreenshotMultiple = async (
 			`getYoutubeScreenshotMultiple resolved to error state: ${errorMessage}`,
 		);
 		return YoutubeScreenshotMultipleResponseSchema.parse({
+			success: false,
+			data: null,
+			error: errorMessage,
+		});
+	}
+};
+
+/**
+ * Fetches YouTube video comments with optional pagination and replies.
+ * @param params - Query parameters including URL/videoId, order, format, pagination, and replies.
+ * @returns Parsed comments data.
+ */
+export const getYoutubeComments = async (
+	params: z.infer<typeof YoutubeCommentsQuerySchema>,
+): Promise<z.infer<typeof YoutubeCommentsResponseSchema>> => {
+	try {
+		const apiClient = getApiClient();
+		const response = await apiClient.get(
+			`${VIDCAP_API_BASE_URL}/youtube/comments`,
+			{ params },
+		);
+		logger.debug(
+			'Raw VidCap API response data for /youtube/comments:',
+			response.data,
+		);
+
+		const rawApiResponse = response.data as any; // Use 'as any' for easier raw access
+
+		// Prepare the object for Zod parsing according to YoutubeCommentsResponseSchema
+		const transformedForParsing: z.infer<
+			typeof YoutubeCommentsResponseSchema
+		> = {
+			success: rawApiResponse.status === 1,
+			data: null, // Initialize data as null
+			error: undefined as string | undefined, // Initialize error as undefined
+		};
+
+		if (transformedForParsing.success) {
+			// If the API call was successful and the expected data structure exists
+			if (rawApiResponse.data) {
+				// Check if data is directly an array of comments (current API behavior)
+				if (Array.isArray(rawApiResponse.data)) {
+					transformedForParsing.data = {
+						nextPageToken: rawApiResponse.nextPageToken, // Check top level for pagination token
+						data: rawApiResponse.data, // Use the array of comments directly
+					};
+				} else {
+					// Handle nested structure for backward compatibility
+					const commentsData =
+						rawApiResponse.data.data || rawApiResponse.data;
+					transformedForParsing.data = {
+						nextPageToken: commentsData.nextPageToken,
+						data: commentsData.data || commentsData.comments || [],
+					};
+				}
+			} else {
+				// API reported success, but the crucial data field is missing
+				logger.warn(
+					'API response for getYoutubeComments: data field is missing, but status is 1.',
+				);
+			}
+		} else {
+			// API call was not successful (status !== 1)
+			transformedForParsing.error =
+				rawApiResponse.message || 'API request indicated failure.';
+		}
+
+		return YoutubeCommentsResponseSchema.parse(transformedForParsing);
+	} catch (error) {
+		logger.error('Error in getYoutubeComments:', error);
+		let errorMessage = 'Failed to fetch YouTube video comments.';
+		if (error instanceof z.ZodError) {
+			errorMessage =
+				'Validation error processing API response for getYoutubeComments.';
+			logger.error(
+				'Zod validation errors in getYoutubeComments:',
+				error.errors,
+			);
+		} else if (axios.isAxiosError(error)) {
+			errorMessage = `API request failed for getYoutubeComments: ${error.message}`;
+			if (error.response) {
+				logger.error(
+					'Axios error response data for getYoutubeComments:',
+					error.response.data,
+				);
+			}
+		} else if (error instanceof Error) {
+			errorMessage = error.message;
+			logger.error('Generic error in getYoutubeComments:', error);
+		} else {
+			logger.error('Unknown error type in getYoutubeComments:', error);
+		}
+		logger.info(
+			`getYoutubeComments resolved to error state: ${errorMessage}`,
+		);
+		return YoutubeCommentsResponseSchema.parse({
 			success: false,
 			data: null,
 			error: errorMessage,

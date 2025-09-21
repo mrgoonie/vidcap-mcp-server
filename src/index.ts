@@ -15,6 +15,7 @@ import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { InMemoryEventStore } from '@modelcontextprotocol/sdk/examples/shared/inMemoryEventStore.js';
 import youtubeTool from './tools/youtube.tool.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { apiKeyMiddleware } from './middleware/apiKeyMiddleware.js';
 
 /**
  * VidCap YouTube API MCP Server
@@ -108,6 +109,9 @@ export async function startServer(mode: 'stdio' | 'http' = 'stdio') {
 		// Create Express app
 		expressApp = express();
 		expressApp.use(express.json());
+
+		// Add API key middleware to extract query param
+		expressApp.use(apiKeyMiddleware);
 
 		// Legacy SSE endpoint for older clients
 		expressApp.get('/sse', async (_req, res) => {

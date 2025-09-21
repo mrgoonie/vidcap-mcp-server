@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Request, Response, NextFunction } from 'express';
 import * as YoutubeService from '../services/youtube.service';
 import {
@@ -8,6 +7,7 @@ import {
 	YoutubeSummaryQuerySchema,
 	YoutubeScreenshotQuerySchema,
 	YoutubeScreenshotMultipleQuerySchema,
+	YoutubeCommentsQuerySchema,
 } from '../types/youtube.schemas';
 import { z } from 'zod';
 
@@ -74,9 +74,8 @@ export const getScreenshot = async (
 ) => {
 	try {
 		const validatedQuery = YoutubeScreenshotQuerySchema.parse(req.query);
-		const result = await YoutubeService.getYoutubeScreenshot(
-			validatedQuery,
-		);
+		const result =
+			await YoutubeService.getYoutubeScreenshot(validatedQuery);
 		res.json(result);
 	} catch (error) {
 		next(error);
@@ -92,9 +91,8 @@ export const getScreenshotMultiple = async (
 		const validatedQuery = YoutubeScreenshotMultipleQuerySchema.parse(
 			req.query,
 		);
-		const result = await YoutubeService.getYoutubeScreenshotMultiple(
-			validatedQuery,
-		);
+		const result =
+			await YoutubeService.getYoutubeScreenshotMultiple(validatedQuery);
 		res.json(result);
 	} catch (error) {
 		next(error);
@@ -252,9 +250,8 @@ export const getYoutubeScreenshotCli = async (
 	params: z.infer<typeof YoutubeScreenshotQuerySchema>,
 ): Promise<CliControllerResponse> => {
 	try {
-		const serviceResponse = await YoutubeService.getYoutubeScreenshot(
-			params,
-		);
+		const serviceResponse =
+			await YoutubeService.getYoutubeScreenshot(params);
 
 		if (serviceResponse.success) {
 			return {
@@ -302,6 +299,41 @@ export const getYoutubeScreenshotMultipleCli = async (
 				success: false,
 				data: null,
 				error: `Failed to get multiple screenshots. API/Service indicated failure. Details: ${JSON.stringify(
+					serviceResponse.data,
+					null,
+					2,
+				)}`,
+			};
+		}
+	} catch (error) {
+		return {
+			success: false,
+			data: null,
+			error:
+				error instanceof Error
+					? error.message
+					: 'An unknown error occurred in the controller processing the service call',
+		};
+	}
+};
+
+// YouTube Comments CLI controller
+export const getYoutubeCommentsCli = async (
+	params: z.infer<typeof YoutubeCommentsQuerySchema>,
+): Promise<CliControllerResponse> => {
+	try {
+		const serviceResponse = await YoutubeService.getYoutubeComments(params);
+
+		if (serviceResponse.success) {
+			return {
+				success: true,
+				data: serviceResponse.data,
+			};
+		} else {
+			return {
+				success: false,
+				data: null,
+				error: `Failed to get comments. API/Service indicated failure. Details: ${JSON.stringify(
 					serviceResponse.data,
 					null,
 					2,
