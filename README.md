@@ -5,6 +5,18 @@ This project provides a Model Context Protocol (MCP) server that acts as a proxy
 - [Github](https://github.com/mrgoonie/vidcap-mcp-server)
 - [NPM](https://www.npmjs.com/package/vidcap-mcp-server)
 
+## Table of Contents
+
+- [VidCap YouTube API](#vidcap-youtube-api)
+- [MCP Client Integration](#mcp-client-integration)
+  - [Claude Desktop Configuration](#claude-desktop-configuration)
+  - [Claude Code Integration](#claude-code-integration)
+  - [Security Best Practices](#security-best-practices)
+  - [Advanced Configuration](#advanced-configuration)
+  - [Troubleshooting](#troubleshooting)
+- [Available MCP Tools](#available-mcp-tools)
+- [Source Code Overview](#source-code-overview)
+
 ## VidCap YouTube API
 
 This server also proxies requests to the VidCap YouTube API, providing convenient access to YouTube video data and functionalities. You will need a `VIDCAP_API_KEY` set in your environment variables.
@@ -123,7 +135,18 @@ Choose your configuration method based on your AI assistant:
 
 ## Claude Desktop Configuration
 
-Add to your Claude Desktop config file (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+### Automatic Configuration (Recommended)
+
+Claude Desktop provides a user-friendly interface for MCP server configuration:
+
+1. **Open Claude Desktop Settings**
+   - Click the settings icon (⚙️) in Claude Desktop
+   - Navigate to the **"Developer"** tab
+   - Click **"Edit Config"** to open the configuration file
+
+2. **Add VidCap MCP Server**
+
+   Add the following configuration to your `claude_desktop_config.json`:
 
 ```json
 {
@@ -139,23 +162,70 @@ Add to your Claude Desktop config file (`~/Library/Application Support/Claude/cl
 }
 ```
 
-**Alternative: Global Config**
-```bash
-# Create global MCP config
-mkdir -p ~/.mcp
-echo '{
-  "vidcap-youtube-api": {
-    "environments": {
-      "VIDCAP_API_KEY": "your_api_key_here",
-      "DEBUG": "false"
+### Manual Configuration
+
+**Location:** `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows)
+
+```json
+{
+  "mcpServers": {
+    "vidcap-youtube-api": {
+      "command": "npx",
+      "args": ["vidcap-mcp-server"],
+      "env": {
+        "VIDCAP_API_KEY": "your_api_key_here",
+        "DEBUG": "false"
+      }
     }
   }
-}' > ~/.mcp/configs.json
+}
 ```
 
-## Claude Code (VS Code Extension)
+### Troubleshooting Claude Desktop
 
-Add to your Claude Code settings:
+- **Configuration Issues**: Verify JSON syntax using a JSON validator
+- **Server Not Starting**: Check logs at `~/Library/Logs/Claude/mcp.log` (macOS)
+- **Permission Errors**: Ensure Node.js and npm are properly installed
+- **Test Manually**: Run `npx vidcap-mcp-server` in terminal to verify server functionality
+
+## Claude Code Integration
+
+Claude Code supports MCP servers with multiple configuration methods:
+
+### Method 1: CLI Configuration (Recommended)
+
+Use Claude Code's built-in MCP management:
+
+```bash
+# Add the VidCap MCP server
+claude mcp add --transport stdio vidcap-youtube-api npx vidcap-mcp-server
+
+# Set environment variables
+claude mcp env set vidcap-youtube-api VIDCAP_API_KEY=your_api_key_here
+```
+
+### Method 2: Project-Level Configuration
+
+Create a `.mcp.json` file in your project root for team-shared configuration:
+
+```json
+{
+  "mcpServers": {
+    "vidcap-youtube-api": {
+      "command": "npx",
+      "args": ["vidcap-mcp-server"],
+      "transport": "stdio",
+      "env": {
+        "VIDCAP_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+### Method 3: User-Level Configuration
+
+For cross-project accessibility, configure in your user settings:
 
 ```json
 {
@@ -164,9 +234,75 @@ Add to your Claude Code settings:
       "command": "npx",
       "args": ["vidcap-mcp-server"],
       "transportType": "stdio",
+      "scope": "user",
       "env": {
         "VIDCAP_API_KEY": "your_api_key_here"
       }
+    }
+  }
+}
+```
+
+### Claude Code Features
+
+- **Resource References**: Use `@vidcap-youtube-api` to reference server capabilities
+- **Slash Commands**: Access tools via `/youtube` commands (if supported)
+- **Environment Variables**: Supports secure credential management
+- **Scope Management**: Control server accessibility at project, user, or local levels
+
+### Import from Claude Desktop
+
+If you have existing Claude Desktop configuration:
+
+```bash
+# Import configuration from Claude Desktop
+claude mcp import-from-claude-desktop
+```
+
+## Quick Reference
+
+### Essential Commands
+
+```bash
+# Install and test server
+npx vidcap-mcp-server
+
+# Claude Code: Add server
+claude mcp add --transport stdio vidcap-youtube-api npx vidcap-mcp-server
+
+# Claude Code: Set API key
+claude mcp env set vidcap-youtube-api VIDCAP_API_KEY=your_key
+
+# Claude Code: List servers
+claude mcp list
+
+# Claude Code: Remove server
+claude mcp remove vidcap-youtube-api
+```
+
+### Minimal Configurations
+
+**Claude Desktop (Basic):**
+```json
+{
+  "mcpServers": {
+    "vidcap": {
+      "command": "npx",
+      "args": ["vidcap-mcp-server"],
+      "env": { "VIDCAP_API_KEY": "your_key" }
+    }
+  }
+}
+```
+
+**Claude Code (Project `.mcp.json`):**
+```json
+{
+  "mcpServers": {
+    "vidcap": {
+      "command": "npx",
+      "args": ["vidcap-mcp-server"],
+      "env": { "VIDCAP_API_KEY": "your_key" }
     }
   }
 }
@@ -328,22 +464,145 @@ Enable detailed logging for troubleshooting:
 }
 ```
 
+## Security Best Practices
+
+### API Key Management
+
+- **Environment Variables**: Store API keys in environment variables, not in configuration files
+- **Project Scope**: Use project-level `.mcp.json` for team configurations without exposing keys
+- **User Scope**: Keep sensitive credentials in user-level configurations
+- **Key Rotation**: Regularly rotate API keys and update configurations
+
+### Permission Control
+
+- **Scope Limitation**: Configure servers with appropriate scope (local, project, or user)
+- **Access Control**: Only grant necessary permissions to MCP servers
+- **Audit Logs**: Monitor MCP server activity through Claude's logging system
+
+## Advanced Configuration
+
+### Remote Server Configuration
+
+For production or shared environments, configure HTTP transport:
+
+```json
+{
+  "mcpServers": {
+    "vidcap-youtube-api-remote": {
+      "transport": "http",
+      "url": "https://your-domain.com/mcp",
+      "headers": {
+        "Authorization": "Bearer your_token_here"
+      },
+      "env": {
+        "VIDCAP_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+### Environment Variable Expansion
+
+Both Claude Desktop and Claude Code support environment variable expansion:
+
+```json
+{
+  "mcpServers": {
+    "vidcap-youtube-api": {
+      "command": "npx",
+      "args": ["vidcap-mcp-server"],
+      "env": {
+        "VIDCAP_API_KEY": "${VIDCAP_API_KEY}",
+        "DEBUG": "${DEBUG:-false}"
+      }
+    }
+  }
+}
+```
+
+### Output Management
+
+Configure output limits for better performance:
+
+```json
+{
+  "mcpServers": {
+    "vidcap-youtube-api": {
+      "command": "npx",
+      "args": ["vidcap-mcp-server"],
+      "env": {
+        "VIDCAP_API_KEY": "your_api_key_here"
+      },
+      "outputLimit": 10000
+    }
+  }
+}
+```
+
 ### Troubleshooting
+
+#### Claude Desktop Issues
 
 **Server Not Starting:**
 - Verify Node.js version ≥18.x
 - Check that the build completed: `npm run build`
 - Ensure API key is properly set
+- Review logs at `~/Library/Logs/Claude/mcp.log` (macOS) or `%APPDATA%\Claude\Logs\mcp.log` (Windows)
+
+**Configuration Issues:**
+- Validate JSON syntax using a JSON validator
+- Check file permissions on configuration directory
+- Ensure absolute paths are used for local commands
+- Test server manually: `npx vidcap-mcp-server`
+
+#### Claude Code Issues
 
 **Tools Not Available:**
 - Confirm MCP client supports stdio transport
 - Check server logs for connection errors
 - Verify file paths in configuration are absolute
+- Run `claude mcp list` to verify server registration
 
-**API Errors:**
+**Authentication Errors:**
 - Validate your VidCap API key at vidcap.xyz
 - Check network connectivity
 - Review error messages in debug mode
+- Verify environment variable expansion
+
+#### General Debugging
+
+**Enable Debug Mode:**
+```bash
+# For Claude Desktop
+{
+  "env": {
+    "VIDCAP_API_KEY": "your_api_key_here",
+    "DEBUG": "true"
+  }
+}
+
+# For Claude Code CLI
+claude mcp env set vidcap-youtube-api DEBUG=true
+```
+
+**Manual Testing:**
+```bash
+# Test server directly
+npx vidcap-mcp-server
+
+# Test with specific transport
+npx vidcap-mcp-server --stdio
+
+# Test HTTP transport
+npx vidcap-mcp-server --http
+```
+
+**Common Issues:**
+- **"Command not found"**: Ensure npm and Node.js are in PATH
+- **"Permission denied"**: Check file permissions and user access
+- **"Connection refused"**: Verify server is running and ports are open
+- **"Invalid API key"**: Confirm key is correct and account is active
 
 ---
 
