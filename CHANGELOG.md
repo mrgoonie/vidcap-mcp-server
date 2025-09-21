@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/mrgoonie/vidcap-mcp-server/compare/v1.1.1...v1.2.0) (2025-09-21)
+
+
+### Features
+
+* **youtube:** add comprehensive YouTube search tool with advanced filtering ([afaa5f5](https://github.com/mrgoonie/vidcap-mcp-server/commit/afaa5f518c4677b0bdd632cc84da0e5787dce241))
+
 ## [1.1.1](https://github.com/mrgoonie/vidcap-mcp-server/compare/v1.1.0...v1.1.1) (2025-09-21)
 
 # [1.1.0](https://github.com/mrgoonie/vidcap-mcp-server/compare/v1.0.0...v1.1.0) (2025-09-21)
