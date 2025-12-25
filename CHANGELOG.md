@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/mrgoonie/vidcap-mcp-server/compare/v1.2.1...v1.2.2) (2025-12-25)
+
+
+### Bug Fixes
+
+* **youtube:** handle flat API response structure in getYoutubeInfo ([2cdc49b](https://github.com/mrgoonie/vidcap-mcp-server/commit/2cdc49b46114ab7cd2f72a46b52162930610e3c0)), closes [#127](https://github.com/mrgoonie/vidcap-mcp-server/issues/127)
+
 ## [1.2.1](https://github.com/mrgoonie/vidcap-mcp-server/compare/v1.2.0...v1.2.1) (2025-09-21)
 
 # [1.2.0](https://github.com/mrgoonie/vidcap-mcp-server/compare/v1.1.1...v1.2.0) (2025-09-21)
