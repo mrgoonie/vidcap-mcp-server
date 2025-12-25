@@ -92,25 +92,16 @@ export const getYoutubeInfo = async (
 			};
 
 		if (transformedForParsing.success) {
-			// If the API call was successful and the expected nested data structure exists
-			if (rawApiResponse.data && rawApiResponse.data.data) {
+			// API returns flat structure: { status: 1, data: { title, description, duration, ... } }
+			if (rawApiResponse.data) {
 				transformedForParsing.data = {
-					title: rawApiResponse.data.data.title,
-					description: rawApiResponse.data.data.description, // Assumes description is present in the API response as per schema
-					duration: rawApiResponse.data.data.duration,
+					title: rawApiResponse.data.title,
+					description: rawApiResponse.data.description,
+					duration: rawApiResponse.data.duration,
 				};
 			} else {
-				// API reported success, but the crucial 'data.data' substructure is missing.
-				// This will lead to transformedForParsing.data remaining null.
-				// YoutubeInfoResponseSchema allows data to be null, so this state is valid for the schema structure itself.
-				// However, if YoutubeInfoDataSchema has required fields, Zod would implicitly error if data was an object missing those fields.
-				// Since data is null here, it's fine. If the API guarantees data.data on success, this indicates an unexpected API response.
-				// For robustness, we could flag this as an error or let Zod validation proceed (data will be null).
-				// Let's assume for now that if status is 1, data.data should exist. If not, it's an issue with the API or our understanding.
-				// If data remains null, and the schema expects an object, Zod will handle it if we didn't make data nullable.
-				// Current schema: successDataSchema makes data nullable, so this is fine.
 				logger.warn(
-					'API response for getYoutubeInfo: data.data is missing, but status is 1.',
+					'API response for getYoutubeInfo: data is missing, but status is 1.',
 				);
 			}
 		} else {
