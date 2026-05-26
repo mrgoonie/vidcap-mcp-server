@@ -1,3 +1,15 @@
+# [1.3.0](https://github.com/mrgoonie/vidcap-mcp-server/compare/v1.2.2...v1.3.0) (2026-05-26)
+
+
+### Bug Fixes
+
+* **middleware:** treat non-string api_key query param as undefined ([0cf5143](https://github.com/mrgoonie/vidcap-mcp-server/commit/0cf5143682bd16b762de4aff60800adda0982c76))
+
+
+### Features
+
+* **api:** migrate base URL to vidcap.zuey.me ([7996732](https://github.com/mrgoonie/vidcap-mcp-server/commit/79967328d1e6239b7618e47e33f7694b3e51849d))
+
 ## [1.2.2](https://github.com/mrgoonie/vidcap-mcp-server/compare/v1.2.1...v1.2.2) (2025-12-25)
 
 
