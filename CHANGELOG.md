@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/mrgoonie/vidcap-mcp-server/compare/v1.3.0...v1.4.0) (2026-05-26)
+
+
+### Features
+
+* **http:** enable CORS for MCP endpoint ([04352ce](https://github.com/mrgoonie/vidcap-mcp-server/commit/04352ce7a1cc0985eeca0b63becd82b203f00093))
+
 # [1.3.0](https://github.com/mrgoonie/vidcap-mcp-server/compare/v1.2.2...v1.3.0) (2026-05-26)
 
 
