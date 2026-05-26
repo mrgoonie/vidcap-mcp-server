@@ -8,6 +8,7 @@ import { config } from './utils/config.util.js';
 import { VERSION, PACKAGE_NAME } from './utils/constants.util.js';
 import { runCli } from './cli/index.js';
 import express from 'express';
+import cors from 'cors';
 import { randomUUID } from 'crypto';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 
@@ -108,6 +109,26 @@ export async function startServer(mode: 'stdio' | 'http' = 'stdio') {
 
 		// Create Express app
 		expressApp = express();
+
+		// Enable CORS for browser-based MCP clients (e.g. Claude.ai Connectors).
+		// Expose mcp-session-id so clients can read it from response headers.
+		expressApp.use(
+			cors({
+				origin: true,
+				credentials: true,
+				methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+				allowedHeaders: [
+					'Content-Type',
+					'Authorization',
+					'mcp-session-id',
+					'mcp-protocol-version',
+					'Last-Event-ID',
+					'Accept',
+				],
+				exposedHeaders: ['mcp-session-id', 'mcp-protocol-version'],
+			}),
+		);
+
 		expressApp.use(express.json());
 
 		// Add API key middleware to extract query param
