@@ -24,7 +24,7 @@ import { Logger } from '../utils/logger.util.js';
 
 const logger = Logger.forContext('services/youtube.service.ts');
 
-const VIDCAP_API_BASE_URL = 'https://vidcap.xyz/api/v1';
+const VIDCAP_API_BASE_URL = 'https://vidcap.zuey.me/api/v1';
 
 export const getVideoById = async (id: string): Promise<any> => {
 	try {

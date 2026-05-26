@@ -138,7 +138,7 @@ This server provides 8 YouTube-related MCP tools that can be integrated with any
 
 ### 1. Get VidCap API Key
 
-1. Visit [vidcap.xyz](https://vidcap.xyz) to obtain your API key
+1. Visit [vidcap.zuey.me](https://vidcap.zuey.me) to obtain your API key
 2. Set the API key in your environment or MCP client configuration
 
 ### 2. Configure Your MCP Client
@@ -605,7 +605,7 @@ Configure output limits for better performance:
 - Run `claude mcp list` to verify server registration
 
 **Authentication Errors:**
-- Validate your VidCap API key at vidcap.xyz
+- Validate your VidCap API key at vidcap.zuey.me
 - Check network connectivity
 - Review error messages in debug mode
 - Verify environment variable expansion
@@ -727,10 +727,10 @@ To test the `/youtube/search` endpoint (available via VidCap API):
 
 ```bash
 # Basic search (replace YOUR_API_KEY with your actual VidCap API key)
-curl "https://vidcap.xyz/api/v1/youtube/search?query=machine%20learning%20tutorial&api_key=YOUR_API_KEY"
+curl "https://vidcap.zuey.me/api/v1/youtube/search?query=machine%20learning%20tutorial&api_key=YOUR_API_KEY"
 
 # Advanced search with filters
-curl "https://vidcap.xyz/api/v1/youtube/search?query=Python%20programming&order=date&videoDuration=medium&maxResults=20&api_key=YOUR_API_KEY"
+curl "https://vidcap.zuey.me/api/v1/youtube/search?query=Python%20programming&order=date&videoDuration=medium&maxResults=20&api_key=YOUR_API_KEY"
 ```
 
 Note: The search functionality is primarily designed for use through the MCP tool `youtube_search` rather than direct HTTP calls.

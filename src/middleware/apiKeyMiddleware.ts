@@ -13,7 +13,8 @@ export function apiKeyMiddleware(
 	res: Response,
 	next: NextFunction,
 ): void {
-	const apiKey = req.query.api_key as string | undefined;
+	const rawApiKey = req.query.api_key;
+	const apiKey = typeof rawApiKey === 'string' ? rawApiKey : undefined;
 
 	if (apiKey) {
 		logger.debug('API key found in query parameters');
